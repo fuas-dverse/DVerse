@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: calc(100% - 140px); /* Adjusted width to accommodate the button */
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .container > div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px 25px; /* Increased padding for bigger buttons */
+            font-size: 18px; /* Increased font size for bigger buttons */
+            border: none;
+            border-radius: 8px; /* Increased border radius for rounded corners */
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            margin-right: 10px; /* Added margin between buttons */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .dropdown {
+            margin-top: 20px;
+        }
+        .dropdown-select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .search-results {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .search-results h2 {
+            margin-top: 0;
+        }
+        .search-results ul {
+            list-style: none;
+            padding: 0;
+        }
+        .search-results ul li {
+            margin-bottom: 10px;
+        }
+        .search-results ul li a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .search-results ul li a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search and Chat Application</h1>
+        <div>
+            <input type="text" id="searchInput" placeholder="Enter your query">
+            <button onclick="searchAndChat()">Search & Chat</button>
+        </div>
+        <div id="resultsContainer" style="display: none;">
+            <div>
+                <button onclick="searchYouTube()">Search YouTube</button>
+                <button onclick="searchGoogle()">Search Google</button>
+            </div>
+            <div id="youtubeLinks" style="display: none;">
+                <h2>YouTube Links</h2>
+                <ul id="youtubeResults"></ul>
+            </div>
+            <div id="googleLinks" style="display: none;">
+                <h2>Google Links</h2>
+                <ul id="googleResults"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        var socket = io();
+
+        function searchAndChat() {
+            var query = document.getElementById('searchInput').value;
+            if (query.trim() !== '') {
+                socket.emit('search_and_chat', { query: query });
+            } else {
+                alert('Please enter a search query.');
+            }
+        }
+
+        function searchYouTube() {
+            document.getElementById('youtubeLinks').style.display = 'block';
+            document.getElementById('googleLinks').style.display = 'none';
+        }
+
+        function searchGoogle() {
+            document.getElementById('googleLinks').style.display = 'block';
+            document.getElementById('youtubeLinks').style.display = 'none';
+        }
+
+        socket.on('search_and_chat_results', function(data) {
+            // Clear previous results
+            document.getElementById('youtubeResults').innerHTML = '';
+            document.getElementById('googleResults').innerHTML = '';
+
+            // Display YouTube results
+            var youtubeLinks = document.getElementById('youtubeLinks');
+            var youtubeResults = document.getElementById('youtubeResults');
+            data.youtube_results.forEach(function(item) {
+                var listItem = document.createElement('li');
+                var link = document.createElement('a');
+                link.href = item.url;
+                link.textContent = item.title;
+                listItem.appendChild(link);
+                youtubeResults.appendChild(listItem);
+            });
+
+            // Display Google results
+            var googleLinks = document.getElementById('googleLinks');
+            var googleResults = document.getElementById('googleResults');
+            data.google_results.forEach(function(item) {
+                var listItem = document.createElement('li');
+                var link = document.createElement('a');
+                link.href = item.link;
+                link.textContent = item.title;
+                listItem.appendChild(link);
+                googleResults.appendChild(listItem);
+            });
+
+            // Show results container
+            document.getElementById('resultsContainer').style.display = 'block';
+        });
+
+        socket.on('error', function(data) {
+            alert('Error: ' + data.message);
+        });
+    </script>
+</body>
+</html>
