@@ -10,5 +10,5 @@ EXPOSE 5000
 
 ENV NAME GoogleSearchAgent
 
-# Run your main.py script as entrypoint
-CMD ["python", "main.py"]
+# Run your app.py script as entrypoint
+CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
