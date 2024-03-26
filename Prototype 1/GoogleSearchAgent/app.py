@@ -1,3 +1,6 @@
+import json
+
+import requests
 from googlesearch import search
 from flask import Flask, request, jsonify
 
@@ -16,13 +19,35 @@ def fetch_google_results(query):
 def get_response():
     if request.method == 'POST':
         data = request.json
-        query = data['query']
+        query = data.get("query")
+        available_festival = data["responses"][0].get("festival_results")
 
-        response = fetch_google_results(query)
+        if available_festival:
+            response = fetch_google_results(f"Tickets {available_festival}")
+        else:
+            response = fetch_google_results(query)
 
-        return jsonify({"response": response})
+        data["responses"].append({"google_results": response})
+
+        next_domain = check_next_domain(data)
+        headers = {'Content-Type': 'application/json'}
+        requests.post(next_domain, data=json.dumps(data), headers=headers)
+
+        return jsonify({'success': True}), 200
     else:
         return "Make a POST request to this url"
+
+
+def check_next_domain(data):
+    current_domain = request.base_url
+    current_index = data["domains"].index(current_domain)
+
+    if current_index + 1 < len(data["domains"]):
+        next_domain = data["domains"][current_index + 1]
+    else:
+        next_domain = data["origin"]
+
+    return next_domain
 
 
 if __name__ == '__main__':

@@ -8,6 +8,8 @@ services:
     environment:
       - OPENAI_API_KEY=OPENAI_API_KEY
       - MONGO_URI=MONGO_URI
+    networks:
+      - prototype-network
    
   youtube-search-agent:
     build: ./YouTubeSearchAgent
@@ -15,8 +17,23 @@ services:
       - '5001:5001'
     environment:
       - API_KEY=API_KEY
+    networks:
+      - prototype-network
       
   google-search-agent:
     build: ./GoogleSearchAgent
     ports:
       - '5002:5002'
+    networks:
+      - prototype-network
+      
+  websocket-server:
+    build: ./BackEndServer
+    ports:
+      - '5003:5003'
+    networks:
+      - prototype-network
+      
+networks:
+  prototype-network:
+    driver: bridge

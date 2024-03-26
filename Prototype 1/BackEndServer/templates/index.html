@@ -50,23 +50,7 @@
         button:hover {
             background-color: #0056b3;
         }
-        .dropdown {
-            margin-top: 20px;
-        }
-        .dropdown-select {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        .search-results {
-            margin-bottom: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+
         .search-results h2 {
             margin-top: 0;
         }
@@ -94,27 +78,18 @@
             <button onclick="searchAndChat()">Search & Chat</button>
         </div>
         <div id="resultsContainer" style="display: none;">
-            <div>
-                <button onclick="searchYouTube()">Search YouTube</button>
-                <button onclick="searchGoogle()">Search Google</button>
-            </div>
-            <div id="youtubeLinks" style="display: none;">
-                <h2>YouTube Links</h2>
-                <ul id="youtubeResults"></ul>
-            </div>
-            <div id="googleLinks" style="display: none;">
-                <h2>Google Links</h2>
-                <ul id="googleResults"></ul>
+            <div id="results">
+
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script>
-        var socket = io();
+        const socket = io();
 
         function searchAndChat() {
-            var query = document.getElementById('searchInput').value;
+            const query = document.getElementById('searchInput').value;
             if (query.trim() !== '') {
                 socket.emit('search_and_chat', { query: query });
             } else {
@@ -122,44 +97,63 @@
             }
         }
 
-        function searchYouTube() {
-            document.getElementById('youtubeLinks').style.display = 'block';
-            document.getElementById('googleLinks').style.display = 'none';
-        }
-
-        function searchGoogle() {
-            document.getElementById('googleLinks').style.display = 'block';
-            document.getElementById('youtubeLinks').style.display = 'none';
-        }
 
         socket.on('search_and_chat_results', function(data) {
-            // Clear previous results
-            document.getElementById('youtubeResults').innerHTML = '';
-            document.getElementById('googleResults').innerHTML = '';
+            const resultContainer = document.getElementById("results")
 
-            // Display YouTube results
-            var youtubeLinks = document.getElementById('youtubeLinks');
-            var youtubeResults = document.getElementById('youtubeResults');
-            data.youtube_results.forEach(function(item) {
-                var listItem = document.createElement('li');
-                var link = document.createElement('a');
-                link.href = item.url;
-                link.textContent = item.title;
-                listItem.appendChild(link);
-                youtubeResults.appendChild(listItem);
-            });
+            console.log(data)
 
-            // Display Google results
-            var googleLinks = document.getElementById('googleLinks');
-            var googleResults = document.getElementById('googleResults');
-            data.google_results.forEach(function(item) {
-                var listItem = document.createElement('li');
-                var link = document.createElement('a');
-                link.href = item.link;
-                link.textContent = item.title;
-                listItem.appendChild(link);
-                googleResults.appendChild(listItem);
-            });
+            const festivalResult = data.responses[0].festival_results;
+            const youtubeResult = data.responses[1].youtube_results;
+            const googleResult = data.responses[2].google_results;
+
+            let festivalHTML = '';
+            let youtubeHTML = '';
+            let googleHTML = '';
+
+            console.log(youtubeResult, typeof youtubeResult)
+            console.log(googleResult, typeof googleResult)
+
+
+            if (Array.isArray(festivalResult)) {
+                festivalHTML = festivalResult.map(festival => `<li>${festival.title}</li>`).join('');
+            } else {
+                festivalHTML = `<li>${festivalResult}</li>`;
+            }
+
+            if (Array.isArray(youtubeResult)) {
+                youtubeHTML = youtubeResult.map(youtube => `<li><a href="${youtube.url}"target="_blank">${youtube.title}</a></li>`).join('');
+            } else {
+                youtubeHTML = `<li><a href="${youtubeResult.url}"target="_blank">${youtubeResult.title}</a></li>`;
+            }
+
+            if (Array.isArray(googleResult)) {
+                googleHTML = googleResult.map(google => `<li><a href="${google}" target="_blank">${google}</a></li>`).join('');
+            } else {
+                googleHTML = `<li><a href="${googleResult}"target="_blank">${googleResult}</a></li>`;
+            }
+
+            resultContainer.innerHTML = `
+                <div class="search-results">
+                    <h2>Festival Results</h2>
+                    <ul>
+                        ${festivalHTML}
+                    </ul>
+                </div>
+                <div class="search-results">
+                    <h2>Youtube Results</h2>
+                    <ul>
+                        ${youtubeHTML}
+                    </ul>
+                </div>
+                <div class="search-results">
+                    <h2>Google Results</h2>
+                    <ul>
+                        ${googleHTML}
+                    </ul>
+                </div>
+            `
+
 
             // Show results container
             document.getElementById('resultsContainer').style.display = 'block';

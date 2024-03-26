@@ -1,6 +1,8 @@
+import json
 import os
-from flask import Flask, request, make_response
+import requests
 from dotenv import load_dotenv
+from flask import Flask, request, jsonify
 from langchain_community.vectorstores.mongodb_atlas import MongoDBAtlasVectorSearch
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -70,11 +72,31 @@ def get_festival_info():
 
     vector_search = get_vector_search_data(query)
     result = get_festival_information(
-            context=vector_search,
-            question=query
-        )
+        context=vector_search,
+        question=query
+    )
 
-    return make_response(result, 200)
+    data.update({"responses": [
+        {"festival_results": result}
+    ]})
+
+    next_domain = check_next_domain(data)
+    headers = {'Content-Type': 'application/json'}
+    requests.post(next_domain, data=json.dumps(data), headers=headers)
+
+    return jsonify({'success': True}), 200
+
+
+def check_next_domain(data):
+    current_domain = request.base_url
+    current_index = data["domains"].index(current_domain)
+
+    if current_index + 1 < len(data["domains"]):
+        next_domain = data["domains"][current_index + 1]
+    else:
+        next_domain = data["origin"]
+
+    return next_domain
 
 
 if __name__ == "__main__":

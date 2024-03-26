@@ -1,5 +1,7 @@
+import json
 import os
 
+import requests
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
@@ -27,11 +29,14 @@ def search_youtube(query):
     return response['items']
 
 
-@app.route('/search-youtube', methods=['GET'])
+@app.route('/', methods=['POST'])
 def search_youtube_api():
-    query = request.args.get('query')
-    if not query:
-        return jsonify({'error': 'Query parameter is missing.'}), 400
+    data = request.json
+    query = data["query"]
+    available_festival = data["responses"][0].get("festival_results")
+
+    if available_festival:
+        query = f"After movie {available_festival}"
 
     try:
         search_results = search_youtube(query)
@@ -41,9 +46,28 @@ def search_youtube_api():
             video_id = item['id']['videoId']
             video_url = f'https://www.youtube.com/watch?v={video_id}'
             videos.append({'title': title, 'url': video_url})
-        return jsonify(videos), 200
+
+        data['responses'].append({'youtube_results': videos})
+
+        next_domain = check_next_domain(data)
+        headers = {'Content-Type': 'application/json'}
+        requests.post(next_domain, data=json.dumps(data), headers=headers)
+
+        return jsonify({'success': True}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+def check_next_domain(data):
+    current_domain = request.base_url
+    current_index = data["domains"].index(current_domain)
+
+    if current_index + 1 < len(data["domains"]):
+        next_domain = data["domains"][current_index + 1]
+    else:
+        next_domain = data["origin"]
+
+    return next_domain
 
 
 if __name__ == '__main__':
