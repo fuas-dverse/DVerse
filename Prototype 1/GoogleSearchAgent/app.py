@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 def fetch_google_results(query):
     try:
-        return list(search(query, num_results=3))
+        return list(search(query, num_results=1))
     except Exception as e:
         print("An error occurred:", e)
         return []
@@ -26,5 +26,4 @@ def get_response():
 
 
 if __name__ == '__main__':
-    print("Hello world")
-    app.run(host="0.0.0.0", debug=True)
+    app.run(port=5002, debug=True)

@@ -1,7 +1,0 @@
-version: '3.8'
-
-services:
-  google-search-agent:
-    build: ./GoogleSearchAgent
-    ports:
-      - '5000:5000'

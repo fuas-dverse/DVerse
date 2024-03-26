@@ -1,13 +1,14 @@
+from flask import Flask, request, jsonify
+from flask_socketio import SocketIO
 from googleapiclient.discovery import build
-from flask import Flask, app, request, jsonify
-from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
 # YouTube API key
-API_KEY = 'YOUR_YOUTUBE_API_KEY'
+API_KEY = ''
+
 
 def search_youtube(query):
     youtube = build('youtube', 'v3', developerKey=API_KEY)
@@ -15,10 +16,11 @@ def search_youtube(query):
         q=query,
         part='snippet',
         type='video',
-        maxResults=5  # Number of results to retrieve
+        maxResults=3  # Number of results to retrieve
     )
     response = request.execute()
     return response['items']
+
 
 @app.route('/search-youtube', methods=['GET'])
 def search_youtube_api():
@@ -38,5 +40,6 @@ def search_youtube_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5001, debug=True)
