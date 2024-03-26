@@ -13,6 +13,8 @@ services:
     build: ./YouTubeSearchAgent
     ports:
       - '5001:5001'
+    environment:
+      - API_KEY=API_KEY
       
   google-search-agent:
     build: ./GoogleSearchAgent

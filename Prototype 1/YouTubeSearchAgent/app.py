@@ -1,3 +1,6 @@
+import os
+
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from googleapiclient.discovery import build
@@ -6,8 +9,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
+load_dotenv()
+
 # YouTube API key
-API_KEY = ''
+API_KEY = os.environ.get('API_KEY')
 
 
 def search_youtube(query):
