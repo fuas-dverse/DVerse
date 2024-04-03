@@ -1,7 +1,8 @@
 "use client"
 import Image from "next/image";
-import {Button, Input} from "@nextui-org/react";
 import {useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
 
 export default function Home() {
 
@@ -38,14 +39,13 @@ export default function Home() {
             </div>
             <div className="flex w-full max-w-3xl justify-between gap-4">
                 <Input
-                    fullWidth
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Type a message..."
                     className="flex-1"
                 />
-                <Button color="primary" onClick={handleSendMessage}>
+                <Button className={"bg-primary text-primary-foreground"} onClick={handleSendMessage}>
                     Send
                 </Button>
             </div>

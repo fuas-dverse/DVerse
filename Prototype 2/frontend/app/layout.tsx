@@ -1,10 +1,16 @@
 import type {Metadata} from "next";
-import {Inter} from "next/font/google";
 import "./globals.css";
-import Providers from "@/app/Providers";
-import AppNavbar from "@/app/components/AppNavbar";
+import {Inter as FontSans} from "next/font/google"
+import {cn} from "@/lib/utils"
+import {ThemeProvider} from "@/components/theme-provider";
+import {MainNav} from "@/components/main-nav";
+import {siteConfig} from "@/config/site";
+import {SiteHeader} from "@/components/site-header";
 
-const inter = Inter({subsets: ["latin"]});
+const fontSans = FontSans({
+    subsets: ["latin"],
+    variable: "--font-sans",
+})
 
 export const metadata: Metadata = {
     title: "DVerse - UI",
@@ -17,13 +23,24 @@ export default function RootLayout(
         children: React.ReactNode;
     }>) {
     return (
-        <html lang="en">
-        <body>
-        <Providers>
-            <AppNavbar/>
-            {children}
-        </Providers>
+        <html lang="en" suppressHydrationWarning>
+        <body className={
+            cn(
+                "min-h-screen bg-background font-sans antialiased",
+                fontSans.variable
+            )}>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+            <div className="relative flex min-h-screen flex-col">
+                <SiteHeader/>
+                {children}
+            </div>
+        </ThemeProvider>
         </body>
         </html>
-    );
+);
 }
