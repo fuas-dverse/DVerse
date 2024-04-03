@@ -6,6 +6,7 @@ import {ThemeProvider} from "@/components/theme-provider";
 import {MainNav} from "@/components/main-nav";
 import {siteConfig} from "@/config/site";
 import {SiteHeader} from "@/components/site-header";
+import {Sidebar} from "@/components/sidebar";
 
 const fontSans = FontSans({
     subsets: ["latin"],
@@ -35,7 +36,7 @@ export default function RootLayout(
             enableSystem
             disableTransitionOnChange
         >
-            <div className="relative flex min-h-screen flex-col">
+            <div className="min-h-screen">
                 <SiteHeader/>
                 {children}
             </div>
