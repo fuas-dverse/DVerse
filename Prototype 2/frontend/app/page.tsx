@@ -4,13 +4,12 @@ import {useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {HistoryBar} from "@/components/Sidebar/HistoryBar";
-import {siteConfig} from "@/config/site";
 import {Icons} from "@/components/Icons/icons";
-import {ScrollArea, ScrollBar} from "@/components/ui/scroll-area";
+import MessageBubble, {MessageBubbleProps} from "@/components/Message/MessageBubble";
 
 export default function Home() {
 
-    const [messages, setMessages] = useState([
+    const [messages, setMessages] = useState<MessageBubbleProps[]>([
         {id: 1, text: 'Hello! How can I help you today?', sender: 'bot'},
         {id: 2, text: 'Can you tell me more about NextUI?', sender: 'user'},
         {id: 2, text: 'Can you tell me more about NextUI?', sender: 'user'},
@@ -26,7 +25,7 @@ export default function Home() {
 
     const handleSendMessage = () => {
         if (newMessage.trim() !== '') {
-            const newMessageObject = {
+            const newMessageObject: MessageBubbleProps = {
                 id: messages.length + 1,
                 text: newMessage,
                 sender: 'user',
@@ -37,18 +36,11 @@ export default function Home() {
         }
     };
     return (
-        <main className="flex flex-col items-center justify-start p-4 sm:p-12 bg-background overflow-hidden min-h-[calc(100vh-65px)]">
+        <main className="flex flex-col items-center justify-start p-4 sm:p-12 bg-background overflow-hidden min-h-[calc(100vh-65px)] sm:w-3/4 sm:m-auto md:w-2/3">
             <div className={"w-full"}>
-                <div className="flex flex-1 flex-col w-full  mb-8">
+                <div className="flex flex-1 flex-col w-full mb-8">
                     {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex ${message.sender === 'bot' ? 'justify-start' : 'justify-end'}`}>
-                            <div
-                                className={`p-2 sm:p-4 mb-2 rounded-lg ${message.sender === 'bot' ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground'}`}>
-                                {message.text}
-                            </div>
-                        </div>
+                        <MessageBubble key={message.id} id={message.id} sender={message.sender} text={message.text}/>
                     ))}
                 </div>
                 <div
