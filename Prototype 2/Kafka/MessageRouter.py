@@ -24,8 +24,8 @@ class MessageRouter:
         self.producer.flush()
 
     def subscribe(self, topic, callback):
-        if topic not in self.list_topics():
-            self.create_topic(topic)
+        if topic not in self._list_topics():
+            self._create_topic(topic)
 
         self.consumer.subscribe([topic])
         while True:
@@ -34,7 +34,10 @@ class MessageRouter:
                 continue
             callback(msg.value().decode('utf-8'))
 
-    def create_topic(self, topic, partitions=1, replication=1):
+    def _list_topics(self):
+        return self.admin.list_topics().topics
+
+    def _create_topic(self, topic, partitions=1, replication=1):
         new_topic = NewTopic(topic, num_partitions=partitions, replication_factor=replication)
         fs = self.admin.create_topics([new_topic])
 
@@ -45,7 +48,7 @@ class MessageRouter:
             except Exception as e:
                 print(f"Failed to create topic {topic}: {e}")
 
-    def delete_topic(self, topic):
+    def _delete_topic(self, topic):
         fs = self.admin.delete_topics([topic])
         for topic, f in fs.items():
             try:
@@ -53,6 +56,3 @@ class MessageRouter:
                 print(f"Topic {topic} deleted")
             except Exception as e:
                 print(f"Failed to delete topic {topic}: {e}")
-
-    def list_topics(self):
-        return self.admin.list_topics().topics
