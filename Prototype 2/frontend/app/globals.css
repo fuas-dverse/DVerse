@@ -60,3 +60,10 @@
         @apply bg-background text-foreground;
     }
 }
+
+body {
+    font-size: 16px;
+}
+input[type="text"] {
+    font-size: inherit;
+}

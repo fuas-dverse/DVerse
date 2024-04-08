@@ -6,6 +6,7 @@ import {Input} from "@/components/ui/input";
 import {HistoryBar} from "@/components/Sidebar/HistoryBar";
 import {Icons} from "@/components/Icons/icons";
 import MessageBubble, {MessageBubbleProps} from "@/components/Message/MessageBubble";
+import {Separator} from "@/components/ui/separator";
 
 export default function Home() {
 
@@ -36,15 +37,19 @@ export default function Home() {
         }
     };
     return (
-        <main className="flex flex-col items-center justify-start p-4 sm:p-12 bg-background overflow-hidden min-h-[calc(100vh-65px)] sm:w-3/4 sm:m-auto md:w-2/3">
-            <div className={"w-full"}>
-                <div className="flex flex-1 flex-col w-full mb-8">
-                    {messages.map((message) => (
-                        <MessageBubble key={message.id} id={message.id} sender={message.sender} text={message.text}/>
-                    ))}
-                </div>
-                <div
-                    className="flex w-full justify-between gap-4 ">
+        <main
+            className="flex relative flex-col bg-background overflow-hidden sm:container p-4">
+            {/*Chat section*/}
+            <div className="flex flex-1 flex-col overflow-y-auto mb-12">
+                {messages.map((message) => (
+                    <MessageBubble key={message.id} id={message.id} sender={message.sender} text={message.text}/>
+                ))}
+            </div>
+
+            {/*Bottom bar for sending data*/}
+            <div
+                className=" fixed bottom-0 z-10 pb-4 pt-4 bg-background w-full px-2 left-1/2 transform -translate-x-1/2">
+                <div className={"flex justify-between gap-4"}>
                     <HistoryBar/>
                     <Input
                         value={newMessage}
@@ -52,6 +57,7 @@ export default function Home() {
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                         placeholder="Type a message..."
                         className=""
+                        type={"text"}
                     />
                     <Button className={"bg-primary text-primary-foreground px-2"} onClick={handleSendMessage}>
                         <div className={"hidden sm:block"}>
@@ -62,6 +68,7 @@ export default function Home() {
                         </div>
                     </Button>
                 </div>
+
             </div>
         </main>
     );
