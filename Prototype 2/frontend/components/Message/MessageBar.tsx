@@ -17,13 +17,15 @@ export default function MessageBar(){
     };
 
     useEffect(() => {
+        // Code gives error in the terminal, but does work in if connected to the right websocket server
+        // !! Is tested with a custom server
         const socket = io("http://localhost:3001/")
         setSocket(socket)
     }, [])
 
     return (
         <div
-            className=" fixed bottom-0 z-10 pb-4 pt-4 bg-background w-full px-2 left-1/2 transform -translate-x-1/2">
+            className="fixed bottom-0 z-10 p-4 bg-background container left-1/2 transform -translate-x-1/2">
             <div className={"flex justify-between gap-4"}>
                 <HistoryBar/>
                 <Input
