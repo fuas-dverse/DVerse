@@ -17,7 +17,7 @@ export const siteConfig = {
         },
     ],
     links: {
-        masterdon: "https://dverse.masto.host/home",
+        mastodon: "https://dverse.masto.host/home",
         github: "https://github.com/fuas-dverse/DVerse",
         docs: "https://fuas-dverse.github.io/",
     },

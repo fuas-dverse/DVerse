@@ -30,7 +30,7 @@ export function SiteHeader() {
                             </div>
                         </Link>
                         <Link
-                            href={siteConfig.links.masterdon}
+                            href={siteConfig.links.mastodon}
                             target="_blank"
                             rel="noreferrer"
                         >
@@ -40,7 +40,7 @@ export function SiteHeader() {
                                     variant: "ghost",
                                 })}
                             >
-                                <Image src={"/mastodon-icon.svg"} alt={"Masterdon"} height={24} width={24}/>
+                                <Image src={"/mastodon-icon.svg"} alt={"Mastodon"} height={24} width={24}/>
                                 <span className="sr-only">Twitter</span>
                             </div>
                         </Link>
