@@ -4,23 +4,14 @@ from confluent_kafka.cimpl import NewTopic
 
 
 class MessageRouter:
-    def __init__(self, server):
-        self.producer = Producer({
-            'bootstrap.servers': server
-        })
+    def __init__(self, server, group_id="default"):
+        self.producer = Producer({'bootstrap.servers': server})
+        self.consumer = Consumer({'bootstrap.servers': server, 'group.id': group_id, 'auto.offset.reset': 'earliest'})
+        self.admin = AdminClient({'bootstrap.servers': server})
 
-        self.consumer = Consumer({
-            'bootstrap.servers': server,
-            'group.id': 'group',
-            'auto.offset.reset': 'earliest'
-        })
-
-        self.admin = AdminClient({
-            'bootstrap.servers': server
-        })
-
-    def send_message(self, topic, message):
-        self.producer.produce(topic, value=message.encode('utf-8'))
+    def send_message(self, topic, message, key=None):
+        headers = {'requestId': key}
+        self.producer.produce(topic, value=message.encode('utf-8'), headers=headers)
         self.producer.flush()
 
     def subscribe(self, topic, callback):
@@ -32,7 +23,7 @@ class MessageRouter:
             msg = self.consumer.poll(timeout=1.0)
             if msg is None or msg.error():
                 continue
-            callback(msg.value().decode('utf-8'))
+            callback(msg)
 
     def _list_topics(self):
         return self.admin.list_topics().topics
