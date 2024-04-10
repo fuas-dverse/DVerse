@@ -6,8 +6,9 @@ export function middleware(request: NextRequest) {
 
     const cspHeader = `
         default-src 'self';
-        script-src 'self' 'unsafe-eval'  'unsafe-inline';
-        style-src 'self' 'unsafe-inline';
+        script-src 'self' 'strict-dynamic' 'unsafe-eval' 'nonce-${nonce}';
+        script-src-elem 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' ;
         img-src 'self' data: blob:;
         font-src 'self';
         connect-src 'self' http://localhost:3001/ wss://localhost:3001/ ws://localhost:3001/;
@@ -17,7 +18,7 @@ export function middleware(request: NextRequest) {
         upgrade-insecure-requests;
         base-uri 'self'
     `
-    //For style-src 'self' 'nonce-${nonce}';is wanted
+    //For style-src 'self' 'nonce-${nonce}'; is wanted not script-src 'self' 'unsafe-eval'  'unsafe-inline';
     //For script-src 'self'  'nonce-${nonce}' 'strict-dynamic'; is wanted
     //Because of EvalError mostly in @next/react-refresh-utils/dist/runtime.js unsafe-eval needs to be set.
 
@@ -27,7 +28,7 @@ export function middleware(request: NextRequest) {
         .trim()
 
     const requestHeaders = new Headers(request.headers)
-    //   requestHeaders.set('x-nonce', nonce)
+      requestHeaders.set('x-nonce', nonce)
 
     requestHeaders.set(
         'Content-Security-Policy',
@@ -43,6 +44,8 @@ export function middleware(request: NextRequest) {
         'Content-Security-Policy',
         contentSecurityPolicyHeaderValue
     )
+
+    console.log(requestHeaders.get('x-nonce'))
 
     return response
 }

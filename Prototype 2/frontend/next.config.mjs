@@ -19,12 +19,17 @@ const nextConfig = {
                 value: 'nosniff'
             },
             {
-                key: 'X-XSS-Protection',
-                value: '1; mode=block'
-            },
-            {
                 key: 'Referrer-Policy',
                 value: 'origin-when-cross-origin'
+            },
+          ],
+        },
+        {
+          source: '/((?!api|_next/static|_next/image|favicon.ico|mastodon-icon.svg).*)',
+          headers: [            
+            {
+              key: 'X-XSS-Protection',
+              value: '1; mode=block'
             },
           ],
         },
