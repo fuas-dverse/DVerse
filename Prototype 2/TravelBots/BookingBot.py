@@ -5,7 +5,8 @@ app = Flask(__name__)
 
 headers = {
     "X-RapidAPI-Host": "booking-com.p.rapidapi.com",
-    "X-RapidAPI-Key": "0c95a1450amsh3509f87e8c01454p150fd2jsn55ba72695e6f"
+    "X-RapidAPI-Key": "0c95a1450amsh3509f87e8c01454p150fd2jsn55ba72695e6f",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
 }
 
 
@@ -63,4 +64,4 @@ def search(query):
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(port=5000)
