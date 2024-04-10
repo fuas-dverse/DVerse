@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 headers = {
     "X-RapidAPI-Host": "booking-com.p.rapidapi.com",
-    "X-RapidAPI-Key": ""
+    "X-RapidAPI-Key": "0c95a1450amsh3509f87e8c01454p150fd2jsn55ba72695e6f"
 }
 
 
@@ -39,8 +39,21 @@ def search_hotel(dest_id, dest_type):
     }
 
     response = requests.get(url, headers=headers, params=querystring)
+    first_results = response.json().get("result")[:3]
 
-    return response.json().get("result")[:3]
+    results = []
+
+    for hotel in first_results:
+        results.append({
+            "name": hotel.get("hotel_name"),
+            "address": hotel.get("address"),
+            "rating": hotel.get("review_score_word"),
+            "price": hotel.get("min_total_price"),
+            "url": hotel.get("url"),
+            "image": hotel.get("main_photo_url")
+        })
+
+    return results
 
 
 @app.route("/search/<query>", methods=["GET"])
