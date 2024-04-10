@@ -45,8 +45,6 @@ export function middleware(request: NextRequest) {
         contentSecurityPolicyHeaderValue
     )
 
-    console.log(requestHeaders.get('x-nonce'))
-
     return response
 }
 
