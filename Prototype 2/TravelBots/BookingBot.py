@@ -1,33 +1,53 @@
 import requests
+from flask import Flask
 
-def search_booking(query):
-    url = "https://hotels4.p.rapidapi.com/locations/search"
+app = Flask(__name__)
 
-    headers = {
-        'x-rapidapi-host': "hotels4.p.rapidapi.com",
-        'x-rapidapi-key': "a31f31df88msh1c43741e15ac2e1p1816b5jsn5a1e8ede963e"
+headers = {
+    "X-RapidAPI-Host": "booking-com.p.rapidapi.com",
+    "X-RapidAPI-Key": ""
+}
+
+
+def search_location(query):
+    url = "https://booking-com.p.rapidapi.com/v1/hotels/locations"
+
+    querystring = {
+        "name": query,
+        "locale": "en-gb"
     }
 
-    params = {
-        "query": query,
-        "locale": "en_US"
+    response = requests.get(url, headers=headers, params=querystring)
+
+    return response.json()[0]
+
+
+def search_hotel(dest_id, dest_type):
+    url = "https://booking-com.p.rapidapi.com/v1/hotels/search"
+
+    querystring = {
+        "dest_id": dest_id,
+        "dest_type": dest_type,
+        "adults_number": "2",
+        "checkin_date": "2024-09-14",
+        "checkout_date": "2024-09-15",
+        "order_by": "popularity",
+        "filter_by_currency": "EUR",
+        "room_number": "1",
+        "locale": "en-gb",
+        "units": "metric",
     }
 
-    response = requests.get(url, headers=headers, params=params)
-    data = response.json()
+    response = requests.get(url, headers=headers, params=querystring)
 
-    return data['suggestions']
+    return response.json().get("result")[:3]
 
-# Example
-user_input = "Paris, France"
-search_results = search_booking(user_input)
 
-# Print hotel names and URLs
-for item in search_results:
-    if item['group'] == 'HOTEL_GROUP':
-        hotel_name = item['entities'][0]['name']
-        hotel_id = item['entities'][0]['destinationId']
-        hotel_url = f"https://www.booking.com/search.html?dest_id={hotel_id}&dest_type=city"
-        print(f"Hotel Name: {hotel_name}")
-        print(f"URL: {hotel_url}")
-        print()
+@app.route("/search/<query>", methods=["GET"])
+def search(query):
+    result = search_location(query)
+    return search_hotel(result.get("dest_id"), result.get("dest_type"))
+
+
+if __name__ == "__main__":
+    app.run(port=5000, debug=True)
