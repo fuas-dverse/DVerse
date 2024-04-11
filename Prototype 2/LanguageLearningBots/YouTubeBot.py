@@ -1,7 +1,7 @@
 from googleapiclient.discovery import build
 
 # YouTube API key
-API_KEY = 'api-key'
+API_KEY = 'AIzaSyBnaSEPWFTrvahe-4JTpT1rz06w1avVyxo'
 
 # Function to search for videos on YouTube
 def search_youtube(query):
@@ -14,16 +14,3 @@ def search_youtube(query):
     )
     response = request.execute()
     return response['items']
-
-# Example
-user_input = "holiday recommendations in Europe"
-search_results = search_youtube(user_input)
-
-# Print video titles and URLs
-for item in search_results:
-    title = item['snippet']['title']
-    video_id = item['id']['videoId']
-    video_url = f'https://www.youtube.com/watch?v={video_id}'
-    print(f"Title: {title}")
-    print(f"URL: {video_url}")
-    print()
