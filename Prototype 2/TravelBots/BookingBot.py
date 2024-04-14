@@ -1,5 +1,6 @@
 import requests
 from flask import Flask
+from NLRTools import CityExtract
 
 app = Flask(__name__)
 
@@ -59,7 +60,8 @@ def search_hotel(dest_id, dest_type):
 
 @app.route("/search/<query>", methods=["GET"])
 def search(query):
-    result = search_location(query)
+    extract_city = CityExtract.extract_city
+    result = extract_city(query)
     return search_hotel(result.get("dest_id"), result.get("dest_type"))
 
 
