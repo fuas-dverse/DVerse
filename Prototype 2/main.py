@@ -1,17 +1,14 @@
-from transformers import pipeline
-from Kafka.MessageRouter import MessageRouter
-from ConversationContextManager import ConversationContextManager
+import threading
 from BotOrchestrators.LanguageLearningBotOrchestrator import LanguageBotOrchestrator
 from BotOrchestrators.TravelBotOrchestrator import TravelBotOrchestrator
-import threading
+from ConversationContextManager import ConversationContextManager
+from Kafka.MessageRouter import MessageRouter
 
-# Function to handle language output messages
-def handle_language_output(message):
-    print("Language Output:", message.value().decode('utf-8'))
 
 # Function to handle travel output messages
-def handle_travel_output(message):
-    print("Travel Output:", message.value().decode('utf-8'))
+def handle_output(message):
+    print("Handle output:", message.value().decode('utf-8'))
+
 
 def main():
     # Initialize Kafka message router
@@ -29,12 +26,12 @@ def main():
     travel_bot_orchestrator = TravelBotOrchestrator("host.docker.internal:9092", "travel_group")
 
     user_input = input("Enter your message: ")
-        # Send the user input to the ConversationContextManager for processing
+    # Send the user input to the ConversationContextManager for processing
     conversation_manager.classify_and_route(user_input)
-    
+
     # Start consuming messages
     message_router.subscribe("input_topic", conversation_manager.classify_and_route)
-    
+
     # Define a function to start consuming messages for a bot orchestrator
     def consume_messages(bot_orchestrator):
         bot_orchestrator.consume()
@@ -42,13 +39,12 @@ def main():
     # Start consuming messages for both bot orchestrators in separate threads
     language_thread = threading.Thread(target=consume_messages, args=(language_bot_orchestrator,))
     travel_thread = threading.Thread(target=consume_messages, args=(travel_bot_orchestrator,))
-    
+
     language_thread.start()
     travel_thread.start()
 
     # Subscribe to output topics and handle output messages
-    message_router.subscribe("language_output", handle_language_output)
-    message_router.subscribe("travel_output", handle_travel_output)
+    message_router.subscribe("topic_output", handle_output)
 
     # Start consuming messages for all subscribed topics
     message_router.start_consuming()
@@ -58,6 +54,7 @@ def main():
         user_input = input("Enter your message: ")
         # Send the user input to the ConversationContextManager for processing
         conversation_manager.classify_and_route(user_input)
+
 
 if __name__ == "__main__":
     # Start the application

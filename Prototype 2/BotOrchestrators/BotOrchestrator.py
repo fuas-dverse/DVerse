@@ -1,5 +1,6 @@
 from confluent_kafka import Producer, Consumer
 
+
 class BotOrchestrator:
     def __init__(self, bootstrap_servers, group_id, bot_type, input_topic, output_topic, search_function):
         self.consumer = Consumer({
@@ -25,4 +26,3 @@ class BotOrchestrator:
     def send_message(self, topic, message):
         self.producer.produce(topic, value=message.encode('utf-8'))
         self.producer.flush()
-

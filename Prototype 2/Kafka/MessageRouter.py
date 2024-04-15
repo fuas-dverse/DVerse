@@ -1,7 +1,7 @@
+import threading
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
-import threading
 
 
 class MessageRouter:
@@ -14,10 +14,10 @@ class MessageRouter:
     def route_message(self, label, topic, message):
         headers = {'requestId': None}
         if label == "language":
-            self.send_message('language_input', message) 
+            self.send_message('language_input', message)
         elif label == "travel":
-            self.send_message('travel_input', message)  
-            
+            self.send_message('travel_input', message)
+
     def send_message(self, topic, message, key=None):
         headers = {'requestId': key}
         if isinstance(message, dict):  # Check if message is a dictionary
@@ -36,7 +36,6 @@ class MessageRouter:
 
         # Add the callback to the subscriptions dictionary
         self.subscriptions[topic] = callback
-
 
     def _list_topics(self):
         return self.admin.list_topics().topics
@@ -68,4 +67,3 @@ class MessageRouter:
             if msg is None or msg.error():
                 continue
             callback(msg)
-        

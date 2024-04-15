@@ -1,5 +1,6 @@
+from confluent_kafka import Producer
 from transformers import pipeline
-from confluent_kafka import Producer, Consumer
+
 
 class ConversationContextManager:
     def __init__(self, bootstrap_servers, message_topic, router):
@@ -11,7 +12,8 @@ class ConversationContextManager:
     def classify_and_route(self, message):
         hypothesis_template = "This text is about {}"
         classes_verbalized = ["language", "travel"]
-        output = self.classifier(message, classes_verbalized, hypothesis_template=hypothesis_template, multi_label=False)
+        output = self.classifier(message, classes_verbalized, hypothesis_template=hypothesis_template,
+                                 multi_label=False)
         predicted_label = output["labels"][0]
 
         # Combine message and classification for routing

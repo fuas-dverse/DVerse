@@ -1,6 +1,7 @@
 import requests
 import spacy
 
+
 def search_hotels(user_input):
     headers = {
         "X-RapidAPI-Host": "booking-com.p.rapidapi.com",
