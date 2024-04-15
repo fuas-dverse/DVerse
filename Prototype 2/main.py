@@ -3,6 +3,7 @@ from Kafka.MessageRouter import MessageRouter
 from ConversationContextManager import ConversationContextManager
 from BotOrchestrators.LanguageLearningBotOrchestrator import LanguageBotOrchestrator
 from BotOrchestrators.TravelBotOrchestrator import TravelBotOrchestrator
+import threading
 
 # Function to handle language output messages
 def handle_language_output(message):
@@ -33,8 +34,17 @@ def main():
     
     # Start consuming messages
     message_router.subscribe("input_topic", conversation_manager.classify_and_route)
-    language_bot_orchestrator.consume()
-    travel_bot_orchestrator.consume()
+    
+    # Define a function to start consuming messages for a bot orchestrator
+    def consume_messages(bot_orchestrator):
+        bot_orchestrator.consume()
+
+    # Start consuming messages for both bot orchestrators in separate threads
+    language_thread = threading.Thread(target=consume_messages, args=(language_bot_orchestrator,))
+    travel_thread = threading.Thread(target=consume_messages, args=(travel_bot_orchestrator,))
+    
+    language_thread.start()
+    travel_thread.start()
 
     # Subscribe to output topics and handle output messages
     message_router.subscribe("language_output", handle_language_output)
