@@ -1,3 +1,3 @@
-from .BookingBot import search_hotel
+from .BookingBot import search_hotels
 
-__all__ = search_hotel
+__all__ = search_hotels
