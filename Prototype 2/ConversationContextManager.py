@@ -10,17 +10,7 @@ class ConversationContextManager:
         self.router = router
 
     def classify_and_route(self, message):
-        hypothesis_template = "This text is about {}"
-        classes_verbalized = ["language", "travel"]
-        output = self.classifier(message, classes_verbalized, hypothesis_template=hypothesis_template,
-                                 multi_label=False)
-        predicted_label = output["labels"][0]
-
-        # Combine message and classification for routing
-        classified_message = {"message": message, "intent": predicted_label}
-
-        # Send the classified message to the MessageRouter
-        self.router.route_message(predicted_label, self.message_topic, classified_message)
-
-        # Return the classified message (for MessageRouter)
+        output = self.classifier(message, ["language", "travel"], multi_label=False)
+        classified_message = {"message": message, "intent": output["labels"][0]}
+        self.router.route_message(output["labels"][0], self.message_topic, classified_message)
         return classified_message

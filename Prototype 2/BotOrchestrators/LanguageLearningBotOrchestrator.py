@@ -1,3 +1,5 @@
+import json
+
 from BotOrchestrators.BotOrchestrator import BotOrchestrator
 from LanguageLearningBots import search_google, search_youtube
 
@@ -30,11 +32,12 @@ class LanguageBotOrchestrator(BotOrchestrator):
 
     def format_response(self, search_results):
         google_results, youtube_results = search_results
-        google_response = "\n".join([f"Title: {item['title']}\nURL: {item['link']}" for item in google_results])
-        youtube_response = "\n".join(
-            [f"Title: {item['snippet']['title']}\nURL: https://www.youtube.com/watch?v={item['id']['videoId']}" for item
-             in youtube_results])
-        return google_response + "\n" + youtube_response
+        google_response = [{"Title": item['title'], "URL": item['link']} for item in google_results]
+        youtube_response = [
+            {"Title": item['snippet']['title'], "URL": f"https://www.youtube.com/watch?v={item['id']['videoId']}"} for
+            item in youtube_results]
+        response = {"GoogleResults": google_response, "YoutubeResults": youtube_response}
+        return json.dumps(response)
 
 
 # Example:

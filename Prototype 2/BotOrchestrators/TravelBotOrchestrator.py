@@ -1,3 +1,5 @@
+import json
+
 from BotOrchestrators.BotOrchestrator import BotOrchestrator
 from LanguageLearningBots import search_google
 from TravelBots.BookingBot import search_hotels
@@ -31,11 +33,12 @@ class TravelBotOrchestrator(BotOrchestrator):
 
     def format_response(self, search_results):
         google_results, hotel_results = search_results
-        google_response = "\n".join([f"Title: {item['title']}\nURL: {item['link']}" for item in google_results])
-        hotel_response = "\n".join([
-                                   f"Hotel Name: {item['name']}\nAddress: {item['address']}\nRating: {item['rating']}\nPrice: {item['price']} EUR per night\nURL: {item['url']}"
-                                   for item in hotel_results]) if hotel_results else "No hotels found."
-        return google_response + "\n" + hotel_response
+        google_response = [{"Title": item['title'], "URL": item['link']} for item in google_results]
+        hotel_response = [{"Hotel Name": item['name'], "Address": item['address'], "Rating": item['rating'],
+                           "Price": f"{item['price']} EUR per night", "URL": item['url']} for item in
+                          hotel_results] if hotel_results else [{"Message": "No hotels found."}]
+        response = {"GoogleResults": google_response, "HotelResults": hotel_response}
+        return json.dumps(response)
 
 
 # Example:
