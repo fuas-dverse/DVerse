@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
         style-src 'self' 'unsafe-inline' ;
         img-src 'self' data: blob:;
         font-src 'self';
-        connect-src 'self' http://localhost:3001/ wss://localhost:3001/ ws://localhost:3001/;
+        connect-src 'self' http://localhost:5000/ wss://localhost:5000/ ws://localhost:5000/;
         object-src 'none'; 
         frame-ancestors 'none';
         form-action 'self'; 
@@ -44,6 +44,8 @@ export function middleware(request: NextRequest) {
         'Content-Security-Policy',
         contentSecurityPolicyHeaderValue
     )
+
+    response.headers.set('Access-Control-Allow-Origin', 'http://localhost:3000')
 
     return response
 }
