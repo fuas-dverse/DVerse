@@ -34,7 +34,7 @@ class TravelBotOrchestrator(BotOrchestrator):
     def format_response(self, search_results):
         google_results, hotel_results = search_results
         google_response = [{"Title": item['title'], "URL": item['link']} for item in google_results]
-        hotel_response = [{"Hotel Name": item['name'], "Address": item['address'], "Rating": item['rating'],
+        hotel_response = [{"Title": item['name'], "Address": item['address'], "Rating": item['rating'],
                            "Price": f"{item['price']} EUR per night", "URL": item['url']} for item in
                           hotel_results] if hotel_results else [{"Message": "No hotels found."}]
         response = {"GoogleResults": google_response, "HotelResults": hotel_response}

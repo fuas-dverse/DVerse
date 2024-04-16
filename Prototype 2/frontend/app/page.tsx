@@ -1,5 +1,5 @@
 "use client"
-import React, {ReactNode, useCallback, useState} from "react";
+import {Fragment, ReactNode, useCallback, useState} from "react";
 import {Message} from "@/types/message";
 import {useSocket} from "@/hooks/useSocket";
 import Link from "next/link";
@@ -18,20 +18,33 @@ export default function Home() {
 		});
 	});
 
+	const DynamicLink = ({ item, index }: { item: any, index: number }) => {
+		const properties = Object.keys(item);
+		return (
+			<Link className={"hover:text-blue-600"} target={"_blank"} key={index} href={item.URL}>
+				{properties.map((prop, i) => item[prop] && (
+					<Fragment key={i}>
+						{i !== 0 && <br />}
+						{prop === 'Title' ? item[prop] : `${prop}: ${item[prop]}`}
+					</Fragment>
+				))}
+			</Link>
+		);
+	};
 
 	const handleSocketMessage = useCallback((data: any): void => {
 		Object.entries(data.data).forEach(([key, value]): void => {
 			if (Array.isArray(value)) {
-				const message = (
-					<>
-						<h2><b>{key}</b></h2><br />
-						{value.map((item: any, index: number) => (
-							<>
-								<Link className={"hover:text-blue-600"} target={"_blank"} key={index} href={item.URL}>{item.Title}</Link><br/>
-							</>
-						))}
-					</>
-				);
+				const message = (<div key={key}>
+					<h2><b>{key}</b></h2><br/>
+					{value.map((item: any, index: number) => (
+						<Fragment key={index}>
+							<DynamicLink item={item} index={index} />
+							<br/>
+							<br />
+						</Fragment>
+					))}
+				</div>);
 
 				handleMessage(message, 'bot');
 			}
