@@ -51,10 +51,10 @@ export default function StatusToggle() {
                     {
                         bots.map((bot, index) => {
                             return (
-                                <>
-                                    <StatusBar key={index} name={bot.name} status={bot.status}/>
+                                <div key={index}>
+                                    <StatusBar name={bot.name} status={bot.status}/>
                                     <Separator/>
-                                </>
+                                </div>
                             )
                         })
                     }
