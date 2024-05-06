@@ -1,5 +1,4 @@
 import json
-
 from BotOrchestrators.BotOrchestrator import BotOrchestrator
 from LanguageLearningBots import search_google, search_youtube
 
@@ -18,6 +17,12 @@ class LanguageBotOrchestrator(BotOrchestrator):
     def search_language(self, message):
         google_results = search_google(message)
         youtube_results = search_youtube(message)
+        # Insert vectors into Milvus
+        google_vector_ids = self.milvus_client.insert(collection_name='language_collection', records=google_results)
+        youtube_vector_ids = self.milvus_client.insert(collection_name='language_collection', records=youtube_results)
+        # Perform search in Milvus
+        google_search_results = self.milvus_client.search(collection_name='language_collection', query_embedding=google_results)
+        youtube_search_results = self.milvus_client.search(collection_name='language_collection', query_embedding=youtube_results)
         return google_results, youtube_results
 
     def consume(self):

@@ -1,4 +1,6 @@
 from confluent_kafka import Producer, Consumer
+from pymilvus import MilvusClient
+import json
 
 
 class BotOrchestrator:
@@ -12,6 +14,7 @@ class BotOrchestrator:
         self.producer = Producer({'bootstrap.servers': bootstrap_servers})
         self.search_function = search_function
         self.output_topic = output_topic
+        self.milvus_client = MilvusClient()  # Initialize Milvus client
 
     def process_message(self, message):
         print(f"{self.__class__.__name__} received message:", message)

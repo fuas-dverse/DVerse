@@ -19,6 +19,12 @@ class TravelBotOrchestrator(BotOrchestrator):
     def search_travel(self, message):
         google_results = search_google(message)
         hotel_results = search_hotels(message)  # Using search_hotels method of TravelBotOrchestrator
+        # Insert vectors into Milvus
+        google_vector_ids = self.milvus_client.insert(collection_name='travel_collection', records=google_results)
+        hotel_vector_ids = self.milvus_client.insert(collection_name='travel_collection', records=hotel_results)
+        # Perform search in Milvus
+        google_search_results = self.milvus_client.search(collection_name='travel_collection', query_embedding=google_results)
+        hotel_search_results = self.milvus_client.search(collection_name='travel_collection', query_embedding=hotel_results)
         return google_results, hotel_results
 
     def consume(self):
