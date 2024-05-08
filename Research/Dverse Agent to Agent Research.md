@@ -84,7 +84,9 @@ Before proceeding with the development of the Dverse application, it's good to k
 
 #### Domain Modelling
 In this new domain model I used the already existing part but changed a small piece. First, each topic had a so-called bot orchestrator. This orchestrator was used to manage what agents to use and manage the results of these agents. The new part just checks itself if there is any unfinished business and send it to a new topic for a new agent to pick it up.
-![[Architecture diagram 8.jpeg]]
+
+![Architecture diagram 8](https://github.com/fuas-dverse/DVerse/assets/43666923/5b5bee4c-0cf3-4156-977f-17b538ad8458)
+
 
 ### Workshop
 #### Prototyping
@@ -233,7 +235,8 @@ This dog is so unwise, it injured its knee by stepping on a bee. Who even does t
 #### Decomposition
 To decomposition, I will create a very small diagram of how we want to event drive architecture to function. This will not be worked out completely as there are still a lot of uncertainties in our application. This will be improved in time.
 
-![[Untitled Diagram.drawio.png]]
+
+![Untitled Diagram drawio](https://github.com/fuas-dverse/DVerse/assets/43666923/39812900-f601-41eb-843c-d6ef0f0c39b7)
 
 This diagram is small but says a lot about the architecture and how we want to create it. First, the user sends a prompt via the UI, which will get handled by some smaller agents. Once this is completed, it will be sent back to the UI.
 
@@ -243,7 +246,9 @@ For this component test I will not write any tests as this is very hard to do fo
 
 To do this I will use our prototype instance of Kafka and add a for loop that fires, 100000 times.
 
-![[Pasted image 20240506113201.png]]
+
+![Pasted image 20240506113201](https://github.com/fuas-dverse/DVerse/assets/43666923/75958d91-b79a-4b22-9e0e-735518ec5391)
+
 
 In this screenshot, we can see that I modified the script to just print instead of doing some heavy lifting like classifying and to send a lot of requests. While running both these scripts, we can see that it has no issue keeping up with the load of Apache Kafka. Of course, this is not a real world example and the classifier has some heavy lifting to do. This could be resolved by having it run in a Kubernetes cluster.
 
