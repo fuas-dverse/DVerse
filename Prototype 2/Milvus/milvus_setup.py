@@ -1,26 +1,42 @@
-from pymilvus import connections, FieldSchema, CollectionSchema, DataType
-
+from pymilvus import DataType, MilvusClient
 
 def setup_milvus():
-    # Connect to Milvus server
-    connections.connect()
+    #Connect to Milvus
+    client = MilvusClient("http://localhost:19530")
 
-    # Create collection schema
-    collection_name = 'my_collection'
-    fields = [
-        FieldSchema(name='embedding', dtype=DataType.FLOAT_VECTOR, dim=768)
-    ]
-    collection_schema = CollectionSchema(fields=fields, description="My collection schema")
+    # Create the basic schema
+    schema = client.create_schema(
+        auto_id=False,
+        enable_dynamic_field=True,
+    )
 
-    # Create collection
-    collection = connections.create_collection(collection_schema, collection_name=collection_name)
+    # Add fields to schema
+    schema.add_field(field_name="embedding_id", datatype=DataType.INT64, is_primary=True)
+    schema.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=768)
 
-    # Create index on the 'embedding' field
-    index_params = {'index_type': 'IVF_FLAT', 'params': {'nlist': 128}, 'metric_type': 'L2'}
-    connections.create_index(collection, index_params=index_params)
+    # Prepare index parameters
+    index_params = client.prepare_index_params()
+
+    # Add indexes
+    index_params.add_index(
+        field_name="embedding_id"
+    )
+
+    index_params.add_index(
+        field_name="embedding", 
+        index_type="IVF_FLAT",
+        metric_type="L2",
+        params={'nlist': 128}
+    )
+
+    client.create_collection(
+        collection_name="embeddings",
+        schema=schema,
+        index_params=index_params
+    )
 
     print("Milvus setup completed.")
-
+    client.close()
 
 if __name__ == "__main__":
     setup_milvus()
