@@ -1,7 +1,8 @@
 import json
 import flask
+from flask import Response
 from flask_socketio import SocketIO
-from confluent_kafka import Producer
+from confluent_kafka import Producer, Consumer,KafkaError
 
 # Create a Flask application
 app = flask.Flask(__name__)
@@ -10,7 +11,10 @@ app = flask.Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Create a Kafka producer
-producer = Producer({'bootstrap.servers': 'host.docker.internal:9092'})
+producer = Producer({'bootstrap.servers': 'localhost:9092'})
+
+# Create a Kafka consumer
+consumer = Consumer({'bootstrap.servers': 'localhost:9092','group.id': 'my-group','auto.offset.reset': 'earliest',})
 
 
 def handle_output(message):
@@ -35,6 +39,51 @@ def handle_message(message):
     producer.produce('classifier.input', value=message.encode('utf-8'))
     producer.flush()
 
+@socketio.on('command')
+def handle_command(topic:str,message):
+    """
+    Handle incoming commands from the UI interface that should be sent to   agents via Kafka.
+
+    Parameters:
+    topic   (str) : The Kafka topic where it needs to be send to.
+    message (json): The Input of the command that is being send.
+    """
+    json_message= json.dumps(message)
+    producer.produce(topic,value=json_message)
+    producer.flush()
+
+def events():
+    print("Start events")
+    result = []
+    while True:
+        msg = consumer.poll(5.0)
+        if msg is None:
+            print("Waiting...")
+            continue
+        if msg.error():
+            if msg.error().code() == KafkaError._PARTITION_EOF:
+                continue
+            else:
+                print(msg.error())
+                break
+        print("Result found")
+        result.append(msg.value())
+        print("Result appended")
+        return result
+
+@socketio.on('getContainer')
+def send_container_data():
+    print("Send container")
+    consumer.subscribe(['DiD_containers'])
+    # return Response(events())
+    results = events()    
+    # json_results =json.dumps(results)
+    print("Results: ",results)
+    socketio.emit('response_command',"Containers: ")
+
+def send_container_data():
+    consumer.subscribe(['DiD_response'])
+    return Response(events())
 
 if __name__ == "__main__":
     socketio.run(app, port=5000, debug=True)
