@@ -1,3 +1,5 @@
+version: '3.7'
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -19,6 +21,15 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  backend:
+    build: ./event-driven-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKERS=kafka:29092
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     ports:
@@ -38,18 +49,3 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     command: start-dev
-
-  websocket-server:
-    build: ./websocket_server
-    environment:
-      FLASK_DEBUG: 1
-      FLASK_ENV: development
-      FLASK_APP: server.py
-    ports:
-      - "5000:5000"
-    entrypoint:
-      - flask
-      - run
-      - --with-threads
-      - --no-reload
-      - --host=0.0.0.0
