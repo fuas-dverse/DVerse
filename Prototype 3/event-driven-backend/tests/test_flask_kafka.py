@@ -1,17 +1,20 @@
-import requests
+import os
 
-BASE_URL = "http://127.0.0.1:5000"
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def simulate_user_input():
-    url = f"{BASE_URL}/produce"
+    url = f"{os.getenv('BASE_URL')}/produce"
     payload = {
         "context": "https://www.w3.org/ns/activitystreams",
         "type": "Create",
         "actor": "https://example.com/users/1",
         "object": {
             "type": "Note",
-            "content": "I would like to travel to Italy next summer."
+            "content": "What food is available in the area?"
         }
     }
     response = requests.post(url, json=payload)

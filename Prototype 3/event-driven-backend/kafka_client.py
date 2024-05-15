@@ -12,7 +12,7 @@ class KafkaClient:
         self.producer = Producer({'bootstrap.servers': self.brokers})
         self.consumer = Consumer({
             'bootstrap.servers': self.brokers,
-            'group.id': 'mygroup',
+            'group.id': 'DVerse',
             'auto.offset.reset': 'earliest'
         })
         self.consumer_thread = None
