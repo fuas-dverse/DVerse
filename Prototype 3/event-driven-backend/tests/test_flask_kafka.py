@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def simulate_user_input():
+def simulate_user_input(user_input):
     url = f"{os.getenv('BASE_URL')}/produce"
     payload = {
         "context": "https://www.w3.org/ns/activitystreams",
@@ -14,7 +14,7 @@ def simulate_user_input():
         "actor": "https://example.com/users/1",
         "object": {
             "type": "Note",
-            "content": "What food is available in the area?"
+            "content": user_input
         }
     }
     response = requests.post(url, json=payload)
@@ -22,4 +22,5 @@ def simulate_user_input():
 
 
 if __name__ == "__main__":
-    simulate_user_input()
+    user_input = input("Enter a question: ")
+    simulate_user_input(user_input)
