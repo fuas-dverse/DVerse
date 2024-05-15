@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 from pydantic import BaseModel, ValidationError
 from kafka_client import KafkaClient
-import json
+from confluent_kafka.admin import AdminClient, NewTopic
+
 import os
 import logging
 
@@ -15,6 +16,30 @@ logging.basicConfig(level=logging.DEBUG)
 # Get Kafka brokers from the environment variable
 kafka_brokers = os.getenv('KAFKA_BROKERS', 'kafka:29092')
 kafka_client = KafkaClient(kafka_brokers)
+topics = ['create_note', 'create_object']
+
+
+def create_kafka_topics(topics):
+    admin_client = AdminClient({'bootstrap.servers': 'host.docker.internal:9092'})
+
+    topic_list = []
+    for topic in topics:
+        topic_list.append(NewTopic(topic, num_partitions=1, replication_factor=1))
+
+    # Create topics
+    fs = admin_client.create_topics(topic_list)
+
+    # Wait for each operation to finish
+    for topic, f in fs.items():
+        try:
+            f.result()  # The result itself is None
+            print(f"Topic {topic} created")
+        except Exception as e:
+            print(f"Failed to create topic {topic}: {e}")
+
+
+# Create topics
+create_kafka_topics(topics)
 
 
 # Define a callback function to handle consumed messages
@@ -22,16 +47,7 @@ def process_message(key, value):
     app.logger.info(f"Consumed message: {key}, {value}")
 
 
-# Start the Kafka consumer thread
-kafka_client.start_consumer('events', process_message)
-
-
 class Event(BaseModel):
-    key: str
-    value: dict
-
-
-class ActivityPubEvent(BaseModel):
     context: str = "https://www.w3.org/ns/activitystreams"
     type: str
     actor: str
@@ -43,59 +59,20 @@ class ProduceEvent(Resource):
         try:
             data = request.get_json()
             event = Event(**data)
-            kafka_client.produce('events', event.key, json.dumps(event.value))
+            event_type = event.type.lower()
+            object_type = event.object['type'].lower()
+            topic = f"{event_type}_{object_type}"
+            kafka_client.produce(topic, event.actor, event.json())
             return jsonify({"status": "success"})
         except ValidationError as e:
             app.logger.error(f"Validation error: {e}")
             return jsonify({"status": "error", "message": e.errors()})
-        except Exception as e:
-            app.logger.error(f"Exception: {e}")
-            return jsonify({"status": "error", "message": str(e)})
-
-
-class ProduceActivityPubEvent(Resource):
-    def post(self):
-        try:
-            data = request.get_json()
-            event = ActivityPubEvent(**data)
-            kafka_client.produce('activitypub_events', event.actor, event.json())
-            return jsonify({"status": "success"})
-        except ValidationError as e:
-            app.logger.error(f"Validation error: {e}")
-            return jsonify({"status": "error", "message": e.errors()})
-        except Exception as e:
-            app.logger.error(f"Exception: {e}")
-            return jsonify({"status": "error", "message": str(e)})
-
-
-class ConsumeEvent(Resource):
-    def get(self):
-        try:
-            events = []
-            for key, value in kafka_client.consume('events'):
-                events.append({"key": key.decode('utf-8'), "value": json.loads(value.decode('utf-8'))})
-            return jsonify(events)
-        except Exception as e:
-            app.logger.error(f"Exception: {e}")
-            return jsonify({"status": "error", "message": str(e)})
-
-
-class ConsumeActivityPubEvent(Resource):
-    def get(self):
-        try:
-            events = []
-            for key, value in kafka_client.consume('activitypub_events'):
-                events.append({"key": key.decode('utf-8'), "value": json.loads(value.decode('utf-8'))})
-            return jsonify(events)
         except Exception as e:
             app.logger.error(f"Exception: {e}")
             return jsonify({"status": "error", "message": str(e)})
 
 
 api.add_resource(ProduceEvent, '/produce')
-api.add_resource(ProduceActivityPubEvent, '/activitypub')
-api.add_resource(ConsumeEvent, '/consume')
-api.add_resource(ConsumeActivityPubEvent, '/consume/activitypub')
 
 
 @app.route('/')
