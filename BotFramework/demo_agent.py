@@ -1,5 +1,5 @@
+import time
 from agent.agent import Agent
-from kafka_manager import KafkaManager
 
 
 def callback(x):
@@ -15,6 +15,7 @@ if __name__ == "__main__":
         callback=callback
     )
 
-    kafka = KafkaManager()
+    # Do some processing here
+    time.sleep(2)
 
-    kafka.send_message("hotel-agent.input", {"message": "Hello, World!"})
+    agent.send_response_to_ui("Hello from the agent!")

@@ -21,14 +21,23 @@ class Agent:
         self.output_format = output_format
         self.callback = callback
 
-        self.db_manager = DatabaseManager()
-        self.kafka_manager = KafkaManager()
-        self.initialize_bot()
+        self.__db_manager = DatabaseManager()
+        self.__kafka_manager = KafkaManager()
+        self.__initialize_bot()
 
-    def initialize_bot(self):
+    def __initialize_bot(self):
         """
         Initialize the bot, and insert bot data into database.
         """
-        self.db_manager.insert_data(self.name, self.description, self.topics, self.output_format)
-        self.kafka_manager.subscribe(f"{self.name}.input", self.callback)
-        self.kafka_manager.start_consuming()
+        self.__db_manager.insert_data(self.name, self.description, self.topics, self.output_format)
+        self.__kafka_manager.subscribe(f"{self.name}.input", self.callback)
+        self.__kafka_manager.start_consuming()
+
+    def send_response_to_ui(self, message):
+        """
+        Send a response message to the UI.
+
+        Args:
+            message (str): The message to send to the UI.
+        """
+        self.__kafka_manager.send_message(f"{self.name}.output", {self.name: message})
