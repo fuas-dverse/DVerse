@@ -40,5 +40,4 @@ class Agent:
         Args:
             message (dict[str, str]): The message to send to the UI.
         """
-        print(f"Sending response to UI: {message}")
         self.__kafka_manager.send_message(f"{self.name}.output", {self.name: message})
