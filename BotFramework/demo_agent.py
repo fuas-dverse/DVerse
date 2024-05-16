@@ -18,4 +18,7 @@ if __name__ == "__main__":
     # Do some processing here
     time.sleep(2)
 
-    agent.send_response_to_ui("Hello from the agent!")
+    agent.send_response_to_ui({
+        "message": "Hello, this is a demo agent.",
+        "time": time.time()
+    })

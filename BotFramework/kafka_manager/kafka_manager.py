@@ -37,6 +37,8 @@ class KafkaManager:
             key (str): The UI key to use for the message
         """
 
+        self.__create_non_existing_topics(topic)
+
         headers = {'requestId': key}
         if isinstance(message, dict):
             message = str(message)
@@ -49,7 +51,6 @@ class KafkaManager:
         """
 
         for topic, callback in self.subscriptions.items():
-            print(f"Consuming messages from topic {topic}")
             threading.Thread(target=self.__consume_messages, args=(topic, callback)).start()
 
     def subscribe(self, topic, callback):
@@ -61,8 +62,7 @@ class KafkaManager:
             callback (func): The callback function to call when a message is received
         """
 
-        if topic not in self.__list_topics():
-            self.__create_topic(topic)
+        self.__create_non_existing_topics(topic)
 
         self.subscriptions[topic] = callback
 
@@ -92,9 +92,20 @@ class KafkaManager:
         for topic, f in fs.items():
             try:
                 f.result()
-                print(f"Topic {topic} created")
             except Exception as e:
                 print(f"Failed to create topic {topic}: {e}")
+
+    def __create_non_existing_topics(self, topic):
+        """
+        Creates the specified topics if they do not already exist
+
+        Args:
+            topic (str): The Kafka topic to create
+        """
+
+        if "^" not in topic:
+            if topic not in self.__list_topics():
+                self.__create_topic(topic)
 
     def __consume_messages(self, topic, callback):
         """
