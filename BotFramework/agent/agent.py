@@ -1,6 +1,7 @@
 from slugify import slugify
 from database_manager.database_manager import DatabaseManager
 from kafka_manager import KafkaManager
+from status_manager import StatusManager
 
 
 class Agent:
@@ -23,6 +24,7 @@ class Agent:
 
         self.__db_manager = DatabaseManager()
         self.__kafka_manager = KafkaManager()
+        self.__status_manager = StatusManager(self.__kafka_manager, self.name)
         self.__initialize_bot()
 
     def __initialize_bot(self):
@@ -32,6 +34,7 @@ class Agent:
         self.__db_manager.insert_data(self.name, self.description, self.topics, self.output_format)
         self.__kafka_manager.subscribe(f"{self.name}.input", self.callback)
         self.__kafka_manager.start_consuming()
+        self.__status_manager.start_looping()
 
     def send_response_to_ui(self, message):
         """
