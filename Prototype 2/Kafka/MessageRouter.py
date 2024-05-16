@@ -2,6 +2,9 @@ import threading
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
+from langchain import LangChain
+
+from DatabaseManager import DatabaseManager
 
 
 class MessageRouter:
@@ -10,6 +13,8 @@ class MessageRouter:
         self.consumer = Consumer({'bootstrap.servers': server, 'group.id': group_id, 'auto.offset.reset': 'earliest'})
         self.admin = AdminClient({'bootstrap.servers': server})
         self.subscriptions = {}
+        self.db_manager = DatabaseManager()
+        self.llm = LangChain(model="gpt-3.5-turbo")
 
     def route_message(self, label, topic, message):
         headers = {'requestId': None}
@@ -67,3 +72,15 @@ class MessageRouter:
             if msg is None or msg.error():
                 continue
             callback(msg)
+
+    def process_intent(self, user_input, intent):
+        bots_info = self.db_manager.get_relevant_bots(intent)
+        response = self.generate_response_with_langchain(user_input, bots_info)
+        return response
+
+    def generate_response_with_langchain(self, user_input, bots_info):
+        context = " ".join([f"{bot['name']}: {bot['description']} ({bot['output_format']})" for bot in bots_info])
+        prompt = f"Answer based on the following context: {context}. What steps need to be made in order to respond to: {user_input}?"
+
+        response = self.llm(prompt)
+        return response

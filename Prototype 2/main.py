@@ -5,6 +5,7 @@ from flask_socketio import SocketIO
 from BotOrchestrators.LanguageLearningBotOrchestrator import LanguageBotOrchestrator
 from BotOrchestrators.TravelBotOrchestrator import TravelBotOrchestrator
 from ConversationContextManager import ConversationContextManager
+from DatabaseManager import DatabaseManager
 from Kafka.MessageRouter import MessageRouter
 
 app = flask.Flask(__name__)
@@ -21,15 +22,22 @@ def main():
     # Initialize Kafka message router
     message_router = MessageRouter("host.docker.internal:9092")
 
+    # Initialize DatabaseManager (Milvus)
+    db_manager = DatabaseManager()
+
     # Initialize ConversationContextManager
     conversation_manager = ConversationContextManager(
         bootstrap_servers="host.docker.internal:9092",
-        message_topic="input_topic",
+        nlp_input_topic="NLP_input",
+        nlp_output_topic="NLP_output",
         router=message_router
     )
 
     # Store conversation_manager in Flask's application context
     app.config['conversation_manager'] = conversation_manager
+
+    # Store db_manager in Flask's application context
+    app.config['db_manager'] = db_manager
 
     # Initialize LanguageBotOrchestrator and TravelBotOrchestrator
     language_bot_orchestrator = LanguageBotOrchestrator("host.docker.internal:9092", "language_group")
@@ -48,6 +56,8 @@ def main():
 
     # Subscribe to output topics and handle output messages
     message_router.subscribe("topic_output", handle_output)
+    message_router.subscribe("travel_input", handle_message)
+    message_router.subscribe("language_input", handle_message)
 
     # Start consuming messages for all subscribed topics
     message_router.start_consuming()
@@ -57,6 +67,10 @@ def main():
 def handle_message(data):
     # Retrieve the conversation_manager from Flask's application context
     conversation_manager = flask.current_app.config['conversation_manager']
+    db_manager = flask.current_app.config['db_manager']
+
+    classified_message = conversation_manager.classify_and_route(data)
+    intent = classified_message['intent']
 
     # Send the user input to the ConversationContextManager for processing
     conversation_manager.classify_and_route(data)
