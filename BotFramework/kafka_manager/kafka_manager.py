@@ -1,14 +1,30 @@
+import os
 import threading
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class KafkaManager:
-    def __init__(self, server, group_id="default"):
-        self.producer = Producer({'bootstrap.servers': server})
-        self.consumer = Consumer({'bootstrap.servers': server, 'group.id': group_id, 'auto.offset.reset': 'earliest'})
-        self.admin = AdminClient({'bootstrap.servers': server})
+    def __init__(self, group_id="default"):
+        config = {
+            'bootstrap.servers': os.environ.get("KAFKA_BOOTSTRAP_SERVER"),
+            'security.protocol': os.environ.get("KAFKA_SECURITY_PROTOCOL"),
+            'sasl.mechanisms': os.environ.get("KAFKA_SASL_MECHANISMS"),
+            'sasl.username': os.environ.get("KAFKA_SASL_USERNAME"),
+            'sasl.password': os.environ.get("KAFKA_SASL_PASSWORD"),
+        }
+
+        self.admin = AdminClient(config)
+        self.producer = Producer(config)
+
+        config['group.id'] = group_id
+        config['auto.offset.reset'] = 'earliest'
+
+        self.consumer = Consumer(config)
         self.subscriptions = {}
 
     def route_message(self, label, topic, message):
@@ -63,6 +79,7 @@ class KafkaManager:
     def _consume_messages(self, topic, callback):
         self.consumer.subscribe([topic])
         while True:
+            print("Polling")
             msg = self.consumer.poll(timeout=1.0)
             if msg is None or msg.error():
                 continue

@@ -1,4 +1,10 @@
 from agent.agent import Agent
+from kafka_manager import KafkaManager
+
+
+def callback(x):
+    print(f"Message received {x.value().decode('utf-8')}")
+
 
 if __name__ == "__main__":
     agent = Agent(
@@ -8,4 +14,9 @@ if __name__ == "__main__":
         output_format="json"
     )
 
-    agent.db_manager.similarity_search(["demo", "agent"])
+    kafka = KafkaManager()
+
+    kafka.subscribe("test", callback)
+    kafka.start_consuming()
+
+    kafka.send_message("test", {"message": "Hello, World!"})
