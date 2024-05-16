@@ -1,7 +1,7 @@
 import json
 import flask
 from flask_socketio import SocketIO
-from confluent_kafka import Producer
+from kafka_manager import KafkaManager
 
 # Create a Flask application
 app = flask.Flask(__name__)
@@ -9,8 +9,7 @@ app = flask.Flask(__name__)
 # Create a SocketIO instance
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Create a Kafka producer
-producer = Producer({'bootstrap.servers': 'host.docker.internal:9092'})
+kafka_manager = KafkaManager()
 
 
 def handle_output(message):
@@ -21,7 +20,9 @@ def handle_output(message):
     message (str): The message to be sent back to the UI.
     """
 
-    socketio.emit('message', {'data': json.loads(message.value().decode('utf-8'))})
+    print(message.value().decode('utf-8'))
+
+    # socketio.emit('message', {'data': json.loads(message.value().decode('utf-8'))})
 
 
 @socketio.on('message')
@@ -32,9 +33,12 @@ def handle_message(message):
     Parameters:
     message (str): The message sent by the user via UI chat interface.
     """
-    producer.produce('classifier.input', value=message.encode('utf-8'))
-    producer.flush()
+    # producer.produce('classifier.input', value=message.encode('utf-8'))
+    # producer.flush()
 
 
 if __name__ == "__main__":
+    kafka_manager.subscribe(r"^.*\.output$", handle_output)
+    kafka_manager.start_consuming()
+
     socketio.run(app, port=5000, debug=True)
