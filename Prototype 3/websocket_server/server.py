@@ -69,17 +69,18 @@ def events():
         print("Result found")
         result.append(msg.value())
         print("Result appended")
-        return result
+        if len(result)>5:
+            return result
 
 @socketio.on('getContainer')
 def send_container_data():
     print("Send container")
     consumer.subscribe(['DiD_containers'])
-    # return Response(events())
     results = events()    
-    # json_results =json.dumps(results)
-    print("Results: ",results)
-    socketio.emit('response_command',"Containers: ")
+    decoded_results = [result.decode("utf-8") for result in results]
+    json_data = json.dumps(decoded_results)
+    print("Results: ",json_data)
+    socketio.emit('response_command',json_data)
 
 def send_container_data():
     consumer.subscribe(['DiD_response'])
