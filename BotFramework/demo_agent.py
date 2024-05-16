@@ -8,15 +8,13 @@ def callback(x):
 
 if __name__ == "__main__":
     agent = Agent(
-        name="Demo Agent",
+        name="Hotel Agent",
         description="This is a demo agent.",
         topics=["demo", "agent"],
-        output_format="json"
+        output_format="json",
+        callback=callback
     )
 
     kafka = KafkaManager()
 
-    kafka.subscribe("test", callback)
-    kafka.start_consuming()
-
-    kafka.send_message("test", {"message": "Hello, World!"})
+    kafka.send_message("hotel-agent.input", {"message": "Hello, World!"})

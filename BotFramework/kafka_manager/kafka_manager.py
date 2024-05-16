@@ -27,36 +27,65 @@ class KafkaManager:
         self.consumer = Consumer(config)
         self.subscriptions = {}
 
-    def route_message(self, label, topic, message):
-        headers = {'requestId': None}
-        if label == "language":
-            self.send_message('language_input', message)
-        elif label == "travel":
-            self.send_message('travel_input', message)
-
     def send_message(self, topic, message, key=None):
+        """
+        Sends a message to a Kafka topic
+
+        Args:
+            topic (str): The Kafka topic to send the message to
+            message (dict[str, str]): The message to send
+            key (str): The UI key to use for the message
+        """
+
         headers = {'requestId': key}
-        if isinstance(message, dict):  # Check if message is a dictionary
-            message = str(message)  # Convert dictionary to string
+        if isinstance(message, dict):
+            message = str(message)
         self.producer.produce(topic, value=message.encode('utf-8'), headers=headers)
         self.producer.flush()
 
     def start_consuming(self):
-        # Start consuming messages
+        """
+        Start consuming messages from the subscribed topics
+        """
+
         for topic, callback in self.subscriptions.items():
-            threading.Thread(target=self._consume_messages, args=(topic, callback)).start()
+            print(f"Consuming messages from topic {topic}")
+            threading.Thread(target=self.__consume_messages, args=(topic, callback)).start()
 
     def subscribe(self, topic, callback):
-        if topic not in self._list_topics():
-            self._create_topic(topic)
+        """
+        Subscribes to a Kafka topic and adds a callback to the subscriptions dictionary
 
-        # Add the callback to the subscriptions dictionary
+        Args:
+            topic (str): The Kafka topic to subscribe to
+            callback (func): The callback function to call when a message is received
+        """
+
+        if topic not in self.__list_topics():
+            self.__create_topic(topic)
+
         self.subscriptions[topic] = callback
 
-    def _list_topics(self):
+    def __list_topics(self):
+        """
+        Lists all Kafka topics
+
+        Returns:
+            list: A list of Kafka topics
+        """
+
         return self.admin.list_topics().topics
 
-    def _create_topic(self, topic, partitions=1, replication=1):
+    def __create_topic(self, topic, partitions=1, replication=3):
+        """
+        Creates a new Kafka topic
+
+        Args:
+            topic (str): The name of the topic to create
+            partitions (int): The number of partitions for the topic
+            replication (int): The number of replicas for the topic
+        """
+
         new_topic = NewTopic(topic, num_partitions=partitions, replication_factor=replication)
         fs = self.admin.create_topics([new_topic])
 
@@ -67,19 +96,17 @@ class KafkaManager:
             except Exception as e:
                 print(f"Failed to create topic {topic}: {e}")
 
-    def _delete_topic(self, topic):
-        fs = self.admin.delete_topics([topic])
-        for topic, f in fs.items():
-            try:
-                f.result()
-                print(f"Topic {topic} deleted")
-            except Exception as e:
-                print(f"Failed to delete topic {topic}: {e}")
+    def __consume_messages(self, topic, callback):
+        """
+        Consumes messages from a Kafka topic and calls the callback function
 
-    def _consume_messages(self, topic, callback):
+        Args:
+            topic (str): The Kafka topic to consume messages from
+            callback (func): The callback function to call when a message is received
+        """
+
         self.consumer.subscribe([topic])
         while True:
-            print("Polling")
             msg = self.consumer.poll(timeout=1.0)
             if msg is None or msg.error():
                 continue
