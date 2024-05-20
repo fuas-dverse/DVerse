@@ -52,8 +52,8 @@ def handle_command(topic:str,message):
     producer.produce(topic,value=json_message)
     producer.flush()
 
-def events():
-    print("Start events")
+def retrieve_data_kafka():
+    print("Start retrieve_data_kafka")
     result = []
     while True:
         msg = consumer.poll(5.0)
@@ -76,15 +76,19 @@ def events():
 def send_container_data():
     print("Send container")
     consumer.subscribe(['DiD_containers'])
-    results = events()    
+    results = retrieve_data_kafka()    
     decoded_results = [result.decode("utf-8") for result in results]
     json_data = json.dumps(decoded_results)
     print("Results: ",json_data)
     socketio.emit('response_command',json_data)
 
-def send_container_data():
+@socketio.on('getResponse')
+def retrieve_container_data():
     consumer.subscribe(['DiD_response'])
-    return Response(events())
+    results = retrieve_data_kafka()    
+    decoded_results = [result.decode("utf-8") for result in results]
+    json_data = json.dumps(decoded_results)
+    socketio.emit("response_DiD",json_data)
 
 if __name__ == "__main__":
     socketio.run(app, port=5000, debug=True)
