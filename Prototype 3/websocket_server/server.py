@@ -52,9 +52,9 @@ def handle_command(topic:str,message):
     producer.produce(topic,value=json_message)
     producer.flush()
 
-def retrieve_data_kafka():
+def retrieve_data_kafka(topic):
     print("Start retrieve_data_kafka")
-    result = []
+    result = []    
     while True:
         msg = consumer.poll(5.0)
         if msg is None:
@@ -69,14 +69,17 @@ def retrieve_data_kafka():
         print("Result found")
         result.append(msg.value())
         print("Result appended")
-        if len(result)>5:
+        if 'DiD_containers' in topic:
+            if len(result)>4:
+                return result
+        else:
             return result
 
 @socketio.on('getContainer')
 def send_container_data():
     print("Send container")
     consumer.subscribe(['DiD_containers'])
-    results = retrieve_data_kafka()    
+    results = retrieve_data_kafka('DiD_containers')    
     decoded_results = [result.decode("utf-8") for result in results]
     json_data = json.dumps(decoded_results)
     print("Results: ",json_data)
@@ -85,7 +88,7 @@ def send_container_data():
 @socketio.on('getResponse')
 def retrieve_container_data():
     consumer.subscribe(['DiD_response'])
-    results = retrieve_data_kafka()    
+    results = retrieve_data_kafka('DiD_response')    
     decoded_results = [result.decode("utf-8") for result in results]
     json_data = json.dumps(decoded_results)
     socketio.emit("response_DiD",json_data)
