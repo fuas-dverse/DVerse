@@ -2,7 +2,11 @@ import threading
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
-from langchain import LangChain
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
 
 from DatabaseManager import DatabaseManager
 
@@ -14,7 +18,7 @@ class MessageRouter:
         self.admin = AdminClient({'bootstrap.servers': server})
         self.subscriptions = {}
         self.db_manager = DatabaseManager()
-        self.llm = LangChain(model="gpt-3.5-turbo")
+        self.llm = ChatOpenAI()
 
     def route_message(self, label, topic, message):
         headers = {'requestId': None}
@@ -82,7 +86,24 @@ class MessageRouter:
 
     def generate_response_with_langchain(self, user_input, bots_info):
         context = " ".join([f"{bot['name']}: {bot['description']} ({bot['output_format']})" for bot in bots_info])
-        prompt = f"Answer based on the following context: {context}. What steps need to be made in order to respond to: {user_input}?"
+        prompt = ChatPromptTemplate.from_template(
+            """
+            Answer based on the following context: {context}. What steps need to be made in order to respond to: {user_input}?
+            """
+        )
 
-        response = self.llm(prompt)
-        return response
+        chain = (
+            RunnableParallel({
+                "context": str,
+                "user_input": RunnablePassthrough()
+            })
+            | prompt
+            | self.llm
+            | StrOutputParser()
+        )
+
+        return chain.invoke({
+            "context": context,
+            "user_input": user_input,
+        })
+

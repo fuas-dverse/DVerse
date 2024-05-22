@@ -9,7 +9,7 @@ from DatabaseManager import DatabaseManager
 from Kafka.MessageRouter import MessageRouter
 
 app = flask.Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:3001")
 
 
 # Function to handle travel output messages
@@ -67,13 +67,8 @@ def main():
 def handle_message(data):
     # Retrieve the conversation_manager from Flask's application context
     conversation_manager = flask.current_app.config['conversation_manager']
-    db_manager = flask.current_app.config['db_manager']
 
-    classified_message = conversation_manager.classify_and_route(data)
-    intent = classified_message['intent']
-
-    # Send the user input to the ConversationContextManager for processing
-    conversation_manager.classify_and_route(data)
+    conversation_manager.classify(data)
 
 
 if __name__ == "__main__":
