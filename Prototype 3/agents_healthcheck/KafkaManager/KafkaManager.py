@@ -2,8 +2,9 @@ import os
 import threading
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
-from confluent_kafka.cimpl import NewTopic
+from confluent_kafka.cimpl import NewTopic, KafkaError
 from dotenv import load_dotenv
+from flask import jsonify
 
 load_dotenv()
 
@@ -117,3 +118,6 @@ class KafkaManager:
                 continue
             print(f"Message received from topic {topic}: {msg.value().decode('utf-8')}")
             callback(msg)
+
+    def get_all_messages_from_last_5_minutes(self, topic):
+        return "Not implemented"
