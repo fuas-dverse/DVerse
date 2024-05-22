@@ -73,6 +73,8 @@ class MessageRouter:
                 continue
             callback(msg)
 
+    # Find relevant bots based on the intent using LLM
+
     def process_intent(self, user_input, intent):
         bots_info = self.db_manager.get_relevant_bots(intent)
         response = self.generate_response_with_langchain(user_input, bots_info)

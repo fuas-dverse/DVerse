@@ -5,11 +5,13 @@ from sentence_transformers import SentenceTransformer
 
 load_dotenv()
 
+# NOT the final version, to be connected to the cloud Milvus
+
 
 class DatabaseManager:
     def __init__(self):
         self.collection_name = "agents"
-        self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # Not sure if this is the right embedding model
         self.init_milvus()
 
     def init_milvus(self):
