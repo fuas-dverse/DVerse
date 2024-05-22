@@ -93,3 +93,4 @@ class DatabaseManager:
             })
         return bots_info
 
+
