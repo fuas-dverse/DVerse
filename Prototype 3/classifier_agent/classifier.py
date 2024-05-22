@@ -1,73 +1,49 @@
-import logging
-from confluent_kafka import Consumer, Producer
-from transformers import pipeline
-import threading
 import json
+
+import requests
+from transformers import pipeline
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from Milvus.DatabaseManager import DatabaseManager
-from websocket_server.kafka_manager.kafka_manager import KafkaManager
+from kafka_manager.kafka_manager import KafkaManager
 
 
 class ClassifierAgent:
-    def __init__(self, consumer_config, producer_config, classifier_model,  nlp_input_topic, nlp_output_topic):
-        self.consumer = Consumer(consumer_config)
-        self.producer = Producer(producer_config)
+    def __init__(self, classifier_model,  nlp_input_topic, nlp_output_topic):
         self.classifier = pipeline("zero-shot-classification", model=classifier_model)
-
+        self.kafka_manager = KafkaManager()
         self.nlp_input_topic = nlp_input_topic
         self.nlp_output_topic = nlp_output_topic
         self.llm = ChatOpenAI()
-        self.db_manager = DatabaseManager()
-
-        # Subscribe to the NLP output topic
-        self.consumer.subscribe([self.nlp_output_topic])
-        threading.Thread(target=self.consume_nlp_output).start()
+        self.consume_messages(self.nlp_input_topic)
 
     def consume_messages(self, topic):
-        self.consumer.subscribe([topic])
-        while True:
-            message = self.consumer.poll(1.0)
-            if message is None:
-                continue
-            if message.error():
-                logging.error(f"Consumer error: {message.error()}")
-                continue
-            self.classify_input(message.value().decode('utf-8'))
+        self.kafka_manager.subscribe(topic, self.classify_input)
+        self.kafka_manager.start_consuming()
 
     def produce_message(self, topic, message):
-        self.producer.produce(f"{topic}.input", value=message.encode('utf-8'))
-        self.producer.flush()
+        self.kafka_manager.send_message(f"{topic}.input", message.encode('utf-8'))
 
     def classify_input(self, message):
-        output = self.classifier(message, ["language", "travel"], multi_label=False)
-        classified_message = {"message": message, "intent": output["labels"][0]}
-        logging.info(classified_message)
+        decoded_message = message.value().decode('utf-8')
+
+        output = self.classifier(decoded_message, ["language", "travel"], multi_label=False)
+        classified_message = {"message": decoded_message, "intent": output["labels"][0]}
+
+        response = self.process_intent(decoded_message, output["labels"][0])
+        print(response)
 
         # Send the classified message to the nlp_output topic
-        self.producer.produce(self.nlp_output_topic, value=json.dumps(classified_message).encode('utf-8'))
-        self.producer.flush()
-
-    def consume_nlp_output(self):
-        while True:
-            msg = self.consumer.poll(timeout=1.0)
-            if msg is None or msg.error():
-                continue
-            message = json.loads(msg.value().decode('utf-8'))
-            intent = message['intent']
-            user_input = message['message']
-            response = self.process_intent(user_input, intent)
-
-            print(response)
-
-    # Find relevant bots based on the intent using LLM
+        self.kafka_manager.send_message(self.nlp_output_topic, {"classifier-agent": str(json.dumps(classified_message))})
 
     def process_intent(self, user_input, intent):
-        bots_info = self.db_manager.get_relevant_bots(intent)
-        response = self.generate_response_with_langchain(user_input, bots_info)
-        return response
+        bots_info = requests.get("https://localhost:8000/" + intent).json()
+        print(bots_info)
+
+        # response = self.generate_response_with_langchain(user_input, bots_info)
+        # print(response)
+        # return response
 
     def generate_response_with_langchain(self, user_input, bots_info):
         context = " ".join([f"{bot['name']}: {bot['description']} ({bot['output_format']})" for bot in bots_info])
@@ -94,13 +70,10 @@ class ClassifierAgent:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     agent = ClassifierAgent(
-        consumer_config={'bootstrap.servers': 'host.docker.internal:9092', 'group.id': 'classifier_agent', 'auto.offset.reset': 'earliest'},
-        producer_config={'bootstrap.servers': 'host.docker.internal:9092'},
         classifier_model="MoritzLaurer/deberta-v3-base-zeroshot-v2.0",
-        nlp_input_topic="nlp_input_topic",
-        nlp_output_topic="nlp_output_topic"
+        nlp_input_topic="nlp.input",
+        nlp_output_topic="nlp.output"
     )
 
 

@@ -1,4 +1,3 @@
-import json
 import flask
 from flask_socketio import SocketIO
 from kafka_manager import KafkaManager
@@ -33,12 +32,14 @@ def handle_message(message):
     Parameters:
     message (str): The message sent by the user via UI chat interface.
     """
-    # producer.produce('classifier.input', value=message.encode('utf-8'))
-    # producer.flush()
+
+    print(message)
+
+    kafka_manager.send_message("nlp.input", message)
 
 
 if __name__ == "__main__":
     kafka_manager.subscribe(r"^.*\.output$", handle_output)
     kafka_manager.start_consuming()
 
-    socketio.run(app, port=5000, debug=True)
+    socketio.run(app, port=19256, debug=True)
