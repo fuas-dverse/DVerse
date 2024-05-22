@@ -81,3 +81,11 @@ class DatabaseManager:
         # Execute the query to retrieve all data matching the filter
         results = collection.query(expr=query_expr, output_fields=["name"])
         return results
+
+    def delete_agent(self, pk):
+        collection = Collection(self.collection_name)
+        collection.load()
+        delete_expr = f"pk == '{pk}'"
+        collection.delete(delete_expr)
+        collection.flush()
+        return f"Agent with pk {pk} deleted"
