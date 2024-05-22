@@ -122,3 +122,5 @@ class KafkaManager:
             if msg is None or msg.error():
                 continue
             callback(msg)
+
+
