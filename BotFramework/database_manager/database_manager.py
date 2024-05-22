@@ -29,12 +29,13 @@ class DatabaseManager:
             FieldSchema(name="description", dtype=DataType.VARCHAR, max_length=100),
             FieldSchema(name="topics", dtype=DataType.ARRAY, element_type=DataType.VARCHAR, max_capacity=100, max_length=100),
             FieldSchema(name="output_format", dtype=DataType.VARCHAR, max_length=100),
+            FieldSchema(name="is_active", dtype=DataType.BOOL),
             FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=384)
         ]
         schema = CollectionSchema(fields, "Database collection where context of agents will be stored.")
         return Collection(self.collection_name, schema)
 
-    def insert_data(self, name, description, topics, output_format):
+    def insert_data(self, name, description, topics, output_format, is_active=True):
         embeddings = self.generate_embeddings(topics)
 
         entities = [
@@ -42,6 +43,7 @@ class DatabaseManager:
             [description],
             [topics],
             [output_format],
+            [is_active],
             [embeddings]
         ]
 

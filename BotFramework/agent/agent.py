@@ -31,7 +31,7 @@ class Agent:
         """
         Initialize the bot, and insert bot data into database.
         """
-        self.__db_manager.insert_data(self.name, self.description, self.topics, self.output_format)
+        self.__db_manager.insert_data(self.name, self.description, self.topics, self.output_format, True)
         self.__kafka_manager.subscribe(f"{self.name}.input", self.callback)
         self.__kafka_manager.start_consuming()
         self.__status_manager.start_looping()
