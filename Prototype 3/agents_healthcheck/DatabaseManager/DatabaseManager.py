@@ -76,10 +76,8 @@ class DatabaseManager:
     def get_all_data(self):
         collection = Collection(self.collection_name)
         collection.load()
-        # Define the filter query
-        query_expr = "is_active == True"
         # Execute the query to retrieve all data matching the filter
-        results = collection.query(expr=query_expr, output_fields=["name"])
+        results = collection.query(expr="", output_fields=["name", "description", "topics", "output_format", "is_active"], limit=1000)
         return results
 
     def delete_agent(self, pk):

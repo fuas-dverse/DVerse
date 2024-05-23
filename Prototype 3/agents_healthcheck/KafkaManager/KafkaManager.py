@@ -1,12 +1,10 @@
 import os
 import threading
+import time
+
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
-from confluent_kafka.cimpl import NewTopic, KafkaError
-from dotenv import load_dotenv
-from flask import jsonify
-
-load_dotenv()
+from confluent_kafka.cimpl import NewTopic, KafkaException, TopicPartition
 
 
 class KafkaManager:
@@ -26,16 +24,12 @@ class KafkaManager:
         config['auto.offset.reset'] = 'earliest'
 
         self.consumer = Consumer(config)
-        self.subscriptions = {}
+        self.messages = []
+        self.lock = threading.Lock()
 
     def send_message(self, topic, message, key=None):
         """
         Sends a message to a Kafka topic
-
-        Args:
-            topic (str): The Kafka topic to send the message to
-            message (dict[str, str]): The message to send
-            key (str): The UI key to use for the message
         """
         self.__create_non_existing_topics(topic)
 
@@ -46,41 +40,27 @@ class KafkaManager:
         self.producer.flush()
         print(f"Message sent to topic {topic}: {message}")
 
-    def start_consuming(self):
+    def start_consuming(self, topic):
         """
-        Start consuming messages from the subscribed topics
+        Start consuming messages from the specified topic
         """
-        for topic, callback in self.subscriptions.items():
-            threading.Thread(target=self.__consume_messages, args=(topic, callback)).start()
+        threading.Thread(target=self.__consume_messages, args=(topic,)).start()
 
-    def subscribe(self, topic, callback):
+    def subscribe(self, topic):
         """
-        Subscribes to a Kafka topic and adds a callback to the subscriptions dictionary
-
-        Args:
-            topic (str): The Kafka topic to subscribe to
-            callback (func): The callback function to call when a message is received
+        Subscribes to a Kafka topic
         """
         self.__create_non_existing_topics(topic)
-        self.subscriptions[topic] = callback
 
     def __list_topics(self):
         """
         Lists all Kafka topics
-
-        Returns:
-            list: A list of Kafka topics
         """
         return self.admin.list_topics().topics
 
     def __create_topic(self, topic, partitions=1, replication=3):
         """
         Creates a new Kafka topic
-
-        Args:
-            topic (str): The name of the topic to create
-            partitions (int): The number of partitions for the topic
-            replication (int): The number of replicas for the topic
         """
         new_topic = NewTopic(topic, num_partitions=partitions, replication_factor=replication)
         fs = self.admin.create_topics([new_topic])
@@ -95,29 +75,52 @@ class KafkaManager:
     def __create_non_existing_topics(self, topic):
         """
         Creates the specified topics if they do not already exist
-
-        Args:
-            topic (str): The Kafka topic to create
         """
         if "^" not in topic:
             if topic not in self.__list_topics():
                 self.__create_topic(topic)
 
-    def __consume_messages(self, topic, callback):
+    def __consume_messages(self, topic):
         """
-        Consumes messages from a Kafka topic and calls the callback function
-
-        Args:
-            topic (str): The Kafka topic to consume messages from
-            callback (func): The callback function to call when a message is received
+        Consumes messages from a Kafka topic and stores them
         """
         self.consumer.subscribe([topic])
+        self.consumer.subscribe([topic])
         while True:
-            msg = self.consumer.poll(timeout=1.0)
-            if msg is None or msg.error():
-                continue
-            print(f"Message received from topic {topic}: {msg.value().decode('utf-8')}")
-            callback(msg)
+            try:
+                msg = self.consumer.poll(timeout=0.1)
+                if msg is None:
+                    continue
+                if msg.error():
+                    if msg.error().code() == KafkaException._PARTITION_EOF:
+                        continue
+                    elif msg.error():
+                        raise KafkaException(msg.error())
+                self.__store_message(msg)
+            except KafkaException as e:
+                print(f"Kafka error: {e}")
+                self.consumer.seek(TopicPartition(topic, 0, 0))  # Reset to the beginning if there's an error
 
-    def get_all_messages_from_last_5_minutes(self, topic):
-        return "Not implemented"
+    def __store_message(self, msg):
+        """
+        Stores messages in the internal list
+        """
+        with self.lock:
+            self.messages.append(msg.value().decode('utf-8'))
+
+    def get_messages(self):
+        """
+        Retrieves the stored messages
+        """
+        with self.lock:
+            messages = self.messages[:]
+        return messages
+
+    def consume_messages(self, topic, duration=5):
+        """
+        Consumes messages for a specific duration from a Kafka topic
+        """
+        self.subscribe(topic)
+        self.start_consuming(topic)
+        time.sleep(duration)
+        return self.get_messages()
