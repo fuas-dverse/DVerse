@@ -18,7 +18,7 @@ class ClassifierAgent:
         self.consume_messages(self.nlp_input_topic)
 
         self.model = HuggingFaceEndpoint(
-            repo_id="HuggingFaceH4/zephyr-7b-beta",
+            repo_id="mistralai/Mistral-7B-Instruct-v0.2",
             task="text-generation",
             temperature=0.8,
         )
@@ -41,7 +41,6 @@ class ClassifierAgent:
         output = self.classifier(message, ["language", "travel"], multi_label=False)
         classified_message = {"message": message, "intent": output["labels"][0]}
         response = self.process_intent(message, output["labels"][0])
-        print(response)
 
         # Send the classified message to the nlp_output topic
         self.kafka_manager.send_message(self.nlp_output_topic,
@@ -61,15 +60,29 @@ class ClassifierAgent:
                 "output_format": "json"
             },
             {
-                "name": "cityGuide-agent",
+                "name": "city-guide-agent",
                 "description": "This is an agent for most viewed places in a city.",
+                "output_format": "json"
+            },
+            {
+                "name": "festival-information-agent",
+                "description": "Gives information about upcoming festivals.",
+                "output_format": "json"
+            },
+            {
+                "name": "google-search-agent",
+                "description": "This is an agent for searching on Google.",
+                "output_format": "json"
+            },
+            {
+                "name": "flight-booking-agent",
+                "description": "This is an agent for flight bookings.",
                 "output_format": "json"
             }
         ]
-        print(bots_info)
 
         response = self.generate_response_with_langchain(user_input, bots_info)
-        print(bots_info)
+        print(response)
         return response
 
     def generate_response_with_langchain(self, user_input, bots_info):
@@ -79,7 +92,8 @@ class ClassifierAgent:
             """
             I want to answer the following question: {question}.
             How can I achieve this based on the following agents in my system: {context}.
-            Give back a JSON list of agents to go through to complete the question as good as possible.
+            Give back only the names of all the agents that could be used to achieve this question.
+            Do not explain anything, just give the names of the agents.
             """
         )
 
