@@ -1,5 +1,4 @@
 import json
-
 import requests
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -12,16 +11,11 @@ from kafka_manager.kafka_manager import KafkaManager
 class ClassifierAgent:
     def __init__(self, classifier_model, nlp_input_topic, nlp_output_topic):
         self.classifier = pipeline("zero-shot-classification", model=classifier_model)
+        self.model = HuggingFaceEndpoint(repo_id="mistralai/Mistral-7B-Instruct-v0.2", task="text-generation", temperature=0.8)
         self.kafka_manager = KafkaManager()
         self.nlp_input_topic = nlp_input_topic
         self.nlp_output_topic = nlp_output_topic
         self.consume_messages(self.nlp_input_topic)
-
-        self.model = HuggingFaceEndpoint(
-            repo_id="mistralai/Mistral-7B-Instruct-v0.2",
-            task="text-generation",
-            temperature=0.8,
-        )
 
     def consume_messages(self, topic):
         self.kafka_manager.subscribe(topic, self.classify_input)
@@ -34,28 +28,18 @@ class ClassifierAgent:
         decoded_message = message.value().decode('utf-8')
         self.classify_and_process(decoded_message)
 
-    def classify_direct_input(self, message):
-        self.classify_and_process(message)
-
     def classify_and_process(self, message):
         output = self.classifier(message, ["language", "travel"], multi_label=False)
         classified_message = {"message": message, "intent": output["labels"][0]}
-        self.process_intent(message, output["labels"][0])
+        response = self.process_intent(message, output["labels"][0])
+        print(response)
 
         # Send the classified message to the nlp_output topic
         self.kafka_manager.send_message(self.nlp_output_topic, {"classifier-agent": str(json.dumps(classified_message))})
 
     def process_intent(self, user_input, intent):
-        bots_info = requests.get(f"http://localhost:8000/{intent}").json()["message"]
-        bots_info = json.loads(bots_info)
-
-        response = self.generate_response_with_langchain(user_input, bots_info)
-        print(response)
-
-        response_list = self.extract_list_from_response(response)
-
-        print(response_list)
-        return response_list
+        bots_info = json.loads(requests.get(f"http://localhost:8000/{intent}").json()["message"])
+        return self.extract_list_from_response(self.generate_response_with_langchain(user_input, bots_info))
 
     @staticmethod
     def extract_list_from_response(response):
@@ -101,6 +85,3 @@ if __name__ == "__main__":
         nlp_input_topic="nlp.input",
         nlp_output_topic="nlp.output"
     )
-
-    # Directly classify and process the input message
-    agent.classify_direct_input("I want to travel to spain")
