@@ -32,7 +32,7 @@ class KafkaManager:
 
         Args:
             topic (str): The Kafka topic to send the message to
-            message (dict[str, str]): The message to send
+            message (Any): The message to send
             key (str): The UI key to use for the message
         """
 

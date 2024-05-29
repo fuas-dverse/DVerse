@@ -33,7 +33,7 @@ class ClassifierAgent:
         intent = output["labels"][0]
         response = self.process_intent(message, intent)
         print(response)
-        json_message = {"classifier-agent": str(json.dumps({"message": message, "intent": intent, "steps": response}))}
+        json_message = {"classifier-agent": {"message": message, "intent": intent, "steps": response}}
         self.kafka_manager.send_message(self.nlp_output_topic, json_message)
         self.kafka_manager.send_message(f"{response[0]}.input", json_message)
 
