@@ -1,11 +1,9 @@
 import json
-import requests
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_huggingface import HuggingFaceEndpoint
 from transformers import pipeline
-
 from kafka_manager.kafka_manager import KafkaManager
 
 
@@ -43,15 +41,14 @@ class ClassifierAgent:
         response = self.process_intent(message, output["labels"][0])
 
         # Send the classified message to the nlp_output topic
-        self.kafka_manager.send_message(self.nlp_output_topic,
-                                        {"classifier-agent": str(json.dumps(classified_message))})
+        self.kafka_manager.send_message(self.nlp_output_topic,{"classifier-agent": str(json.dumps(classified_message))})
 
     def process_intent(self, user_input, intent):
         # Hardcoded bot information
         bots_info = [
             {
-                "name": "hotel-agent",
-                "description": "This is an agent for hotel bookings.",
+                "name": "hotel-booking-agent",
+                "description": "This is an agent for booking hotels.",
                 "output_format": "json"
             },
             {
@@ -82,8 +79,17 @@ class ClassifierAgent:
         ]
 
         response = self.generate_response_with_langchain(user_input, bots_info)
-        print(response)
-        return response
+        response_list = self.extract_list_from_response(response)
+        return response_list
+
+    @staticmethod
+    def extract_list_from_response(response):
+        start_index = response.find('[') + 1
+        end_index = response.find(']')
+        list_string = response[start_index:end_index]
+        list_string = list_string.replace("'", "")
+        response_list = [item.strip() for item in list_string.split(',')]
+        return response_list
 
     def generate_response_with_langchain(self, user_input, bots_info):
         context = " ".join([f"{bot['name']}: {bot['description']} ({bot['output_format']})" for bot in bots_info])
@@ -92,8 +98,8 @@ class ClassifierAgent:
             """
             I want to answer the following question: {question}.
             How can I achieve this based on the following agents in my system: {context}.
-            Give back only the names of all the agents that could be used to achieve this question.
-            Do not explain anything, just give the names of the agents.
+            Give back all the agents that could be used to achieve this question.
+            Do not explain anything, just give the the agents in the following array format: ['agent1', 'agent2', 'etc']
             """
         )
 
@@ -109,7 +115,7 @@ class ClassifierAgent:
 
         return chain.invoke({
             "context": context,
-            "question": user_input
+            "question": user_input,
         })
 
 
