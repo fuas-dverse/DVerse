@@ -1,4 +1,6 @@
 import json
+
+import requests
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
@@ -38,48 +40,21 @@ class ClassifierAgent:
     def classify_and_process(self, message):
         output = self.classifier(message, ["language", "travel"], multi_label=False)
         classified_message = {"message": message, "intent": output["labels"][0]}
-        response = self.process_intent(message, output["labels"][0])
+        self.process_intent(message, output["labels"][0])
 
         # Send the classified message to the nlp_output topic
-        self.kafka_manager.send_message(self.nlp_output_topic,{"classifier-agent": str(json.dumps(classified_message))})
+        self.kafka_manager.send_message(self.nlp_output_topic, {"classifier-agent": str(json.dumps(classified_message))})
 
     def process_intent(self, user_input, intent):
-        # Hardcoded bot information
-        bots_info = [
-            {
-                "name": "hotel-booking-agent",
-                "description": "This is an agent for booking hotels.",
-                "output_format": "json"
-            },
-            {
-                "name": "restaurant-agent",
-                "description": "This is an agent for restaurant recommendations.",
-                "output_format": "json"
-            },
-            {
-                "name": "city-guide-agent",
-                "description": "This is an agent for most viewed places in a city.",
-                "output_format": "json"
-            },
-            {
-                "name": "festival-information-agent",
-                "description": "Gives information about upcoming festivals.",
-                "output_format": "json"
-            },
-            {
-                "name": "google-search-agent",
-                "description": "This is an agent for searching on Google.",
-                "output_format": "json"
-            },
-            {
-                "name": "flight-booking-agent",
-                "description": "This is an agent for flight bookings.",
-                "output_format": "json"
-            }
-        ]
+        bots_info = requests.get(f"http://localhost:8000/{intent}").json()["message"]
+        bots_info = json.loads(bots_info)
 
         response = self.generate_response_with_langchain(user_input, bots_info)
+        print(response)
+
         response_list = self.extract_list_from_response(response)
+
+        print(response_list)
         return response_list
 
     @staticmethod
@@ -100,6 +75,7 @@ class ClassifierAgent:
             How can I achieve this based on the following agents in my system: {context}.
             Give back all the agents that could be used to achieve this question.
             Do not explain anything, just give the the agents in the following array format: ['agent1', 'agent2', 'etc']
+            Multiple agents are allowed!
             """
         )
 
