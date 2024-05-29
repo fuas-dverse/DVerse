@@ -30,12 +30,10 @@ class ClassifierAgent:
 
     def classify_and_process(self, message):
         output = self.classifier(message, ["language", "travel"], multi_label=False)
-        classified_message = {"message": message, "intent": output["labels"][0]}
-        response = self.process_intent(message, output["labels"][0])
-        print(response)
-
-        # Send the classified message to the nlp_output topic
-        self.kafka_manager.send_message(self.nlp_output_topic, {"classifier-agent": str(json.dumps(classified_message))})
+        intent = output["labels"][0]
+        response = self.process_intent(message, intent)
+        json_message = {"classifier-agent": str(json.dumps({"message": message, "intent": intent, "steps": response}))}
+        self.kafka_manager.send_message(self.nlp_output_topic, json_message)
 
     def process_intent(self, user_input, intent):
         bots_info = json.loads(requests.get(f"http://localhost:8000/{intent}").json()["message"])
@@ -77,6 +75,9 @@ class ClassifierAgent:
             "context": context,
             "question": user_input,
         })
+
+    def send_to_agent(self, message, first_agent):
+        self.produce_message(f"{first_agent}.input", message)
 
 
 if __name__ == "__main__":
