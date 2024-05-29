@@ -21,8 +21,8 @@ class ClassifierAgent:
         self.kafka_manager.subscribe(topic, self.classify_input)
         self.kafka_manager.start_consuming()
 
-    def produce_message(self, topic, message):
-        self.kafka_manager.send_message(f"{topic}.input", message.encode('utf-8'))
+    # def produce_message(self, topic, message):
+    #     self.kafka_manager.send_message(f"{topic}.input", message.encode('utf-8'))
 
     def classify_input(self, message):
         decoded_message = message.value().decode('utf-8')
@@ -32,8 +32,10 @@ class ClassifierAgent:
         output = self.classifier(message, ["language", "travel"], multi_label=False)
         intent = output["labels"][0]
         response = self.process_intent(message, intent)
+        print(response)
         json_message = {"classifier-agent": str(json.dumps({"message": message, "intent": intent, "steps": response}))}
         self.kafka_manager.send_message(self.nlp_output_topic, json_message)
+        self.kafka_manager.send_message(f"{response[0]}.input", json_message)
 
     def process_intent(self, user_input, intent):
         bots_info = json.loads(requests.get(f"http://localhost:8000/{intent}").json()["message"])
@@ -53,8 +55,8 @@ class ClassifierAgent:
 
         prompt = PromptTemplate.from_template(
             """
+            Answer ONLY using the following agents: {context}
             I want to answer the following question: {question}.
-            How can I achieve this based on the following agents in my system: {context}.
             Give back all the agents that could be used to achieve this question.
             Do not explain anything, just give the the agents in the following array format: ['agent1', 'agent2', 'etc']
             Multiple agents are allowed!
@@ -75,9 +77,6 @@ class ClassifierAgent:
             "context": context,
             "question": user_input,
         })
-
-    def send_to_agent(self, message, first_agent):
-        self.produce_message(f"{first_agent}.input", message)
 
 
 if __name__ == "__main__":
