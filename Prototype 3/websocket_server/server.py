@@ -13,6 +13,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 kafka_output_manager = KafkaManager()
 kafka_container_manager = KafkaManager()
 
+
 def handle_output(message):
     """
     Handle the output from the agents to send back to UI over websocket connection.
@@ -21,9 +22,18 @@ def handle_output(message):
     message (str): The message to be sent back to the UI.
     """
 
-    print(message.value().decode('utf-8'))
-
-    # socketio.emit('message', {'data': json.loads(message.value().decode('utf-8'))})
+    print(message)
+    response = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "@type": "Object",
+        "actor": "bot",
+        "content": {
+            "type": "text",
+            "response": "I am just a random response from the bot"
+        },
+        "chatId": message['chatId'],
+    }
+    socketio.emit(f"response-{message['chatId']}", response)
 
 
 @socketio.on('message')
@@ -37,9 +47,14 @@ def handle_message(message):
 
     # producer.produce('classifier.input', value=message.encode('utf-8'))
     # producer.flush()
+    print(message)
+
+    socketio.emit(f"response-{message['chatId']}", message)
+    handle_output(message)
+
 
 @socketio.on('command')
-def handle_command(topic:str,message):
+def handle_command(topic: str, message):
     """
     Handle incoming commands from the UI interface that should be sent to   agents via Kafka.
 
@@ -47,17 +62,20 @@ def handle_command(topic:str,message):
     topic   (str) : The Kafka topic where it needs to be send to.
     message (json): The Input of the command that is being send.
     """
-    json_message= json.dumps(message)
+    json_message = json.dumps(message)
     kafka_container_manager.send_message(topic, message=json_message)
+
 
 def retrieve_data_kafka(message):
     print("Start retrieve_data_kafka")
     result = message.value().decode('utf-8')
     socketio.emit("response_DiD", result)
 
+
 def send_container_data(message):
-    # print(message.value().decode('utf-8'))    
-    socketio.emit('response_command',message.value().decode('utf-8'))
+    # print(message.value().decode('utf-8'))
+    socketio.emit('response_command', message.value().decode('utf-8'))
+
 
 @socketio.on('getResponse')
 def retrieve_container_data():
