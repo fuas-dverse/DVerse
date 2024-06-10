@@ -37,7 +37,6 @@ class ClassifierAgent:
 
         output = self.classifier(message, ["language", "travel", "festival"], multi_label=False)
         intent = output["labels"][0]
-        print(intent)
 
         try:
             response = self.process_intent(message, intent)
@@ -63,7 +62,6 @@ class ClassifierAgent:
 
         # Convert dictionary to JSON string before sending
         json_message_str = json.dumps(json_message)
-        print(json_message_str)
 
         self.kafka_manager.send_message(self.nlp_output_topic, json_message_str)
         self.kafka_manager.send_message(f"{response[0]}.input", json_message_str)
