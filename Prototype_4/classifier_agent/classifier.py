@@ -6,6 +6,7 @@ from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_huggingface import HuggingFaceEndpoint
 from transformers import pipeline
 from kafka_manager.kafka_manager import KafkaManager
+import re
 
 
 class ClassifierAgent:
@@ -26,20 +27,20 @@ class ClassifierAgent:
     #     self.kafka_manager.send_message(f"{topic}.input", message.encode('utf-8'))
 
     def classify_input(self, message):
-
         decoded_message = message.value().decode('utf-8')
         processed_message = self.check_and_convert(decoded_message)
         self.classify_and_process(processed_message)
 
     def classify_and_process(self, message):
         chat_id = message["chatId"]
-        message = message["content"]["value"]
+        message_content = message["content"]["value"]
 
-        output = self.classifier(message, ["language", "travel", "festival"], multi_label=False)
+        output = self.classifier(message_content, ["language", "travel", "festival", "hotel", "search"],
+                                 multi_label=False)
         intent = output["labels"][0]
 
         try:
-            response = self.process_intent(message, intent)
+            response = self.process_intent(message_content, intent)
         except requests.exceptions.RequestException as e:
             print(f"Failed to process intent '{intent}': {e}")
             return e  # Return error message and keep polling for new messages
@@ -49,15 +50,14 @@ class ClassifierAgent:
                 "@context": "https://www.w3.org/ns/activitystreams",
                 "@type": "Object",
                 "actor": "agent",
-                "content":
-                    [
-                        {
-                            "agent": "classifier-agent",
-                            "message": message,
-                            "intent": intent,
-                            "steps": response,
-                        },
-                    ],
+                "content": [
+                    {
+                        "agent": "classifier-agent",
+                        "message": message_content,
+                        "intent": intent,
+                        "steps": response,
+                    },
+                ],
                 "chatId": chat_id,
             }
         )
@@ -70,7 +70,12 @@ class ClassifierAgent:
 
     def process_intent(self, user_input, intent):
         bots_info = json.loads(requests.get(f"http://localhost:8000/{intent}").json()["message"])
-        return self.extract_list_from_response(self.generate_response_with_langchain(user_input, bots_info))
+        llm_response = self.generate_response_with_langchain(user_input, bots_info)
+
+        if "1." in llm_response:
+            return self.validate_and_convert_steps(llm_response)
+        else:
+            return self.extract_list_from_response(llm_response)
 
     @staticmethod
     def extract_list_from_response(response):
@@ -121,6 +126,9 @@ class ClassifierAgent:
         else:
             raise TypeError("Input must be a string or a JSON object")
 
+    def validate_and_convert_steps(self, steps):
+        return [part for part in steps.split() if part][1::2]
+
 
 if __name__ == "__main__":
     agent = ClassifierAgent(
@@ -128,3 +136,4 @@ if __name__ == "__main__":
         nlp_input_topic="nlp.input",
         nlp_output_topic="nlp.output"
     )
+

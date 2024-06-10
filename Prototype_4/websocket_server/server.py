@@ -21,18 +21,9 @@ def handle_output(message):
     Parameters:
     message (str): The message to be sent back to the UI.
     """
-    message = "Message received from a *.output topic"
-    response = {
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "@type": "Object",
-        "actor": "bot",
-        "content": {
-            "type": "text",
-            "value": message,
-        },
-        "chatId": "bgerbgoer",
-    }
-    socketio.emit("response-bgerbgoer", response)
+    print(f"Message received: {message}")
+
+    socketio.emit("response-bgerbgoer", message)
 
 
 @socketio.on('message')
@@ -43,7 +34,6 @@ def handle_message(message):
     Parameters:
     message (str): The message sent by the user via UI chat interface.
     """
-
     # producer.produce('classifier.input', value=message.encode('utf-8'))
     # producer.flush()
     socketio.emit(f"response-{message['chatId']}", message)
