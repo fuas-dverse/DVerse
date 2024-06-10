@@ -122,4 +122,4 @@ class KafkaManager:
             msg = self.consumer.poll(timeout=1.0)
             if msg is None or msg.error():
                 continue
-            callback(msg)
+            callback(msg.value().decode('utf-8'))
