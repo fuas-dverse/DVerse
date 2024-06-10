@@ -22,7 +22,6 @@ def handle_output(message):
     message (str): The message to be sent back to the UI.
     """
     message = "Message received from a *.output topic"
-    print(message)
     response = {
         "@context": "https://www.w3.org/ns/activitystreams",
         "@type": "Object",
@@ -65,13 +64,11 @@ def handle_command(topic: str, message):
 
 
 def retrieve_data_kafka(message):
-    print("Start retrieve_data_kafka")
     result = message.value().decode('utf-8')
     socketio.emit("response_DiD", result)
 
 
 def send_container_data(message):
-    # print(message.value().decode('utf-8'))
     socketio.emit('response_command', message.value().decode('utf-8'))
 
 
