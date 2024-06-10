@@ -1,4 +1,6 @@
+import json
 import os
+import threading
 from confluent_kafka import Producer, Consumer
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
@@ -32,21 +34,25 @@ class KafkaManager:
 
         Args:
             topic (str): The Kafka topic to send the message to
-            message (Any): The message to send
+            message (dict[str, str]): The message to send
             key (str): The UI key to use for the message
         """
 
         self.__create_non_existing_topics(topic)
 
         headers = {'requestId': key}
-        if isinstance(message, dict):
-            message = str(message)
-        self.producer.produce(topic, value=message.encode('utf-8'), headers=headers)
+        serialized_message = json.dumps(message).encode('utf-8')
+
+        self.producer.produce(topic, value=serialized_message, headers=headers)
         self.producer.flush()
 
     def start_consuming(self):
+        """
+        Start consuming messages from the subscribed topics
+        """
+
         for topic, callback in self.subscriptions.items():
-            self.__consume_messages(topic, callback)
+            threading.Thread(target=self.__consume_messages, args=(topic, callback)).start()
 
     def subscribe(self, topic, callback):
         """
@@ -56,6 +62,7 @@ class KafkaManager:
             topic (str): The Kafka topic to subscribe to
             callback (func): The callback function to call when a message is received
         """
+
         self.__create_non_existing_topics(topic)
 
         self.subscriptions[topic] = callback
@@ -112,7 +119,6 @@ class KafkaManager:
 
         self.consumer.subscribe([topic])
         while True:
-            print("Polling")
             msg = self.consumer.poll(timeout=1.0)
             if msg is None or msg.error():
                 continue

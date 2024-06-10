@@ -21,19 +21,18 @@ def handle_output(message):
     Parameters:
     message (str): The message to be sent back to the UI.
     """
-
-    print(message)
+    message = "Message received from a *.output topic"
     response = {
         "@context": "https://www.w3.org/ns/activitystreams",
         "@type": "Object",
         "actor": "bot",
         "content": {
             "type": "text",
-            "response": "I am just a random response from the bot"
+            "value": message,
         },
-        "chatId": message['chatId'],
+        "chatId": "bgerbgoer",
     }
-    socketio.emit(f"response-{message['chatId']}", response)
+    socketio.emit("response-bgerbgoer", response)
 
 
 @socketio.on('message')
@@ -47,10 +46,8 @@ def handle_message(message):
 
     # producer.produce('classifier.input', value=message.encode('utf-8'))
     # producer.flush()
-    print(message)
-
     socketio.emit(f"response-{message['chatId']}", message)
-    handle_output(message)
+    kafka_output_manager.send_message('nlp.input', message)
 
 
 @socketio.on('command')
@@ -67,13 +64,11 @@ def handle_command(topic: str, message):
 
 
 def retrieve_data_kafka(message):
-    print("Start retrieve_data_kafka")
     result = message.value().decode('utf-8')
     socketio.emit("response_DiD", result)
 
 
 def send_container_data(message):
-    # print(message.value().decode('utf-8'))
     socketio.emit('response_command', message.value().decode('utf-8'))
 
 
@@ -90,4 +85,4 @@ if __name__ == "__main__":
     kafka_container_manager.subscribe("DiD_containers", send_container_data)
     kafka_container_manager.start_consuming()
 
-    socketio.run(app, port=5000, debug=True)
+    socketio.run(app, port=5001, debug=True)

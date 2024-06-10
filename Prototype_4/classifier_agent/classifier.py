@@ -11,7 +11,8 @@ from kafka_manager.kafka_manager import KafkaManager
 class ClassifierAgent:
     def __init__(self, classifier_model, nlp_input_topic, nlp_output_topic):
         self.classifier = pipeline("zero-shot-classification", model=classifier_model)
-        self.model = HuggingFaceEndpoint(repo_id="mistralai/Mistral-7B-Instruct-v0.2", task="text-generation", temperature=0.8)
+        self.model = HuggingFaceEndpoint(repo_id="mistralai/Mistral-7B-Instruct-v0.2", task="text-generation",
+                                         temperature=0.8)
         self.kafka_manager = KafkaManager()
         self.nlp_input_topic = nlp_input_topic
         self.nlp_output_topic = nlp_output_topic
@@ -25,17 +26,45 @@ class ClassifierAgent:
     #     self.kafka_manager.send_message(f"{topic}.input", message.encode('utf-8'))
 
     def classify_input(self, message):
+
         decoded_message = message.value().decode('utf-8')
-        self.classify_and_process(decoded_message)
+        processed_message = self.check_and_convert(decoded_message)
+        self.classify_and_process(processed_message)
 
     def classify_and_process(self, message):
-        output = self.classifier(message, ["language", "travel"], multi_label=False)
+        chat_id = message["chatId"]
+        message = message["content"]["value"]
+
+        output = self.classifier(message, ["language", "travel", "festival"], multi_label=False)
         intent = output["labels"][0]
-        response = self.process_intent(message, intent)
-        print(response)
-        json_message = {"classifier-agent": {"message": message, "intent": intent, "steps": response}}
-        self.kafka_manager.send_message(self.nlp_output_topic, json_message)
-        self.kafka_manager.send_message(f"{response[0]}.input", json_message)
+
+        try:
+            response = self.process_intent(message, intent)
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to process intent '{intent}': {e}")
+            return e  # Return error message and keep polling for new messages
+
+        json_message = self.check_and_convert(
+            {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "@type": "Object",
+                "actor": "agent",
+                "agent": "classifier-agent",
+                "content":
+                    {
+                        "message": message,
+                        "intent": intent,
+                        "steps": response
+                    },
+                "chatId": chat_id,
+            }
+        )
+
+        # Convert dictionary to JSON string before sending
+        json_message_str = json.dumps(json_message)
+
+        self.kafka_manager.send_message(self.nlp_output_topic, json_message_str)
+        self.kafka_manager.send_message(f"{response[0]}.input", json_message_str)
 
     def process_intent(self, user_input, intent):
         bots_info = json.loads(requests.get(f"http://localhost:8000/{intent}").json()["message"])
@@ -77,6 +106,18 @@ class ClassifierAgent:
             "context": context,
             "question": user_input,
         })
+
+    def check_and_convert(self, input_data):
+        if isinstance(input_data, str):
+            try:
+                json_data = json.loads(input_data)
+                return json_data
+            except json.JSONDecodeError:
+                raise ValueError("String is not a valid JSON")
+        elif isinstance(input_data, dict):
+            return input_data
+        else:
+            raise TypeError("Input must be a string or a JSON object")
 
 
 if __name__ == "__main__":
