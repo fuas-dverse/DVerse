@@ -49,13 +49,15 @@ class ClassifierAgent:
                 "@context": "https://www.w3.org/ns/activitystreams",
                 "@type": "Object",
                 "actor": "agent",
-                "agent": "classifier-agent",
                 "content":
-                    {
-                        "message": message,
-                        "intent": intent,
-                        "steps": response
-                    },
+                    [
+                        {
+                            "agent": "classifier-agent",
+                            "message": message,
+                            "intent": intent,
+                            "steps": response,
+                        },
+                    ],
                 "chatId": chat_id,
             }
         )

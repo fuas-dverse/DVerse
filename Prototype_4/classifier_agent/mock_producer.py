@@ -10,7 +10,7 @@ if __name__ == "__main__":
         "actor": "user",
         "content": {
             "type": "text",
-            "value": "I want to travel to Italy",
+            "value": "I want to book a hotel in the netherlands",
         },
         "chatId": "fwefrew",
     }
