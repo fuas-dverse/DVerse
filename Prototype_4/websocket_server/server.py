@@ -36,8 +36,28 @@ def handle_message(message):
     """
     # producer.produce('classifier.input', value=message.encode('utf-8'))
     # producer.flush()
-    socketio.emit(f"response-{message['chatId']}", message)
+    print(message)
+    socketio.emit(f"response-{message['chatid']}", message)
     kafka_output_manager.send_message('nlp.input', message)
+
+
+@socketio.on('createChat')
+def handle_created_chat(message):
+    """
+    Handle incoming chat creation from the UI interface to be sent to agents via Kafka.
+
+    Parameters:
+    message (str): The chat message sent by the user via UI chat interface.
+    """
+    socketio.emit("refreshChats", message)
+
+
+@socketio.on('deleteChat')
+def handle_delete_chat(message):
+    """
+    Handle incoming chat deletion from the UI interface to be sent to agents via Kafka.
+    """
+    socketio.emit("refreshChats", message)
 
 
 @socketio.on('command')
