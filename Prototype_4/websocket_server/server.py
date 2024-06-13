@@ -21,9 +21,10 @@ def handle_output(message):
     Parameters:
     message (str): The message to be sent back to the UI.
     """
-    print(f"Message received: {message}")
+    message_dict = json.loads(message)
+    print(f"sending to message: response-{message_dict.get('chatid')}")
 
-    socketio.emit("response-bgerbgoer", message)
+    socketio.emit(f"response-{message_dict.get('chatid')}", message_dict)
 
 
 @socketio.on('message')
@@ -37,7 +38,10 @@ def handle_message(message):
     # producer.produce('classifier.input', value=message.encode('utf-8'))
     # producer.flush()
     print(message)
+    print(f"sending to message: response-{message.get('chatid')}")
+
     socketio.emit(f"response-{message['chatid']}", message)
+
     kafka_output_manager.send_message('nlp.input', message)
 
 
