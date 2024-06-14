@@ -21,9 +21,11 @@ def handle_output(message):
     message (str): The message to be sent back to the UI.
     """
     message_dict = json.loads(message)
-    print(f"sending to message: response-{message_dict.get('chatid')}")
+    chat_id = message_dict.get('chatid')
 
-    socketio.emit(f"response-{message_dict.get('chatid')}", message_dict)
+    print(chat_id)
+    print(f"sending to message: response-{chat_id}")
+    socketio.emit(f"response-{chat_id}", message_dict)
 
 
 @socketio.on('message')
