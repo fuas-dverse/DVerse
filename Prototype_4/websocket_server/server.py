@@ -1,6 +1,5 @@
 import json
 import flask
-from flask import Response
 from flask_socketio import SocketIO
 from kafka_manager import KafkaManager
 
@@ -99,4 +98,4 @@ if __name__ == "__main__":
     kafka_container_manager.subscribe("DiD_containers", send_container_data)
     kafka_container_manager.start_consuming()
 
-    socketio.run(app, port=5001, debug=True)
+    socketio.run(app, port=5001, debug=True, allow_unsafe_werkzeug=True)
