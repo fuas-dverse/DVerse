@@ -34,8 +34,13 @@ class ClassifierAgent:
     def classify_and_process(self, message):
         chat_id = message.get("chatId")
         message_content = message.get("content").get("value")
+        topics = requests.get("http://34.91.141.27/get/topics").json()["message"]
+        topics = json.loads(topics)
 
-        output = self.classifier(message_content, ["language", "travel", "festival", "hotel", "search"], multi_label=False)
+        if len(topics) == 0:
+            return print("No topics available.")
+
+        output = self.classifier(message_content, topics, multi_label=False)
         intent = output["labels"][0]
 
         try:
