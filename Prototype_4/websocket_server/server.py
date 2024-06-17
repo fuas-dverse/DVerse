@@ -1,5 +1,7 @@
 import json
 import flask
+import requests
+from flask import request
 from flask_socketio import SocketIO
 from kafka_manager import KafkaManager
 
@@ -11,6 +13,20 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 kafka_output_manager = KafkaManager()
 kafka_container_manager = KafkaManager()
+
+
+@app.route('/emit', methods=['POST'])
+def emit():
+    """
+    Emit a message to the UI via the websocket connection.
+    """
+    message = request.get_json()
+    print(message)
+
+    chat_id = message.get('chatid')
+
+    socketio.emit(f"response-{chat_id}", message)
+    return "Message emitted!"
 
 
 def handle_output(message):
@@ -25,24 +41,17 @@ def handle_output(message):
 
     print(chat_id)
     print(f"sending to message: response-{chat_id}")
-    socketio.emit(f"response-{chat_id}", message_dict)
+    response = requests.post('http://localhost:5001/emit', json=message_dict)
 
 
 @socketio.on('message')
 def handle_message(message):
     """
-    Handle incoming messages from chat screen UI to be sent to agents via Kafka.
+    Handle incoming messages from chat screen UI to be sent to classifier via Kafka.
 
     Parameters:
     message (str): The message sent by the user via UI chat interface.
     """
-    # producer.produce('classifier.input', value=message.encode('utf-8'))
-    # producer.flush()
-    print(message)
-    print(f"sending to message: response-{message.get('chatid')}")
-
-    socketio.emit(f"response-{message['chatid']}", message)
-
     kafka_output_manager.send_message('nlp.input', message)
 
 
@@ -71,8 +80,8 @@ def handle_command(topic: str, message):
     Handle incoming commands from the UI interface that should be sent to   agents via Kafka.
 
     Parameters:
-    topic   (str) : The Kafka topic where it needs to be send to.
-    message (json): The Input of the command that is being send.
+    topic   (str) : The Kafka topic where it needs to be sent to.
+    message (json): The Input of the command that is being sent.
     """
     json_message = json.dumps(message)
     kafka_container_manager.send_message(topic, message=json_message)
@@ -100,4 +109,4 @@ if __name__ == "__main__":
     kafka_container_manager.subscribe("DiD_containers", send_container_data)
     kafka_container_manager.start_consuming()
 
-    socketio.run(app, port=5001, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, port=5001, debug=True, allow_unsafe_werkzeug=True, use_reloader=False, log_output=True)
