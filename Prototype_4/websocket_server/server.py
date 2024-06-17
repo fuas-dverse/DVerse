@@ -23,7 +23,7 @@ def emit():
     message = request.get_json()
     print(message)
 
-    chat_id = message.get('chatid')
+    chat_id = message.get('chatId')
 
     socketio.emit(f"response-{chat_id}", message)
     return "Message emitted!"
@@ -52,6 +52,9 @@ def handle_message(message):
     Parameters:
     message (str): The message sent by the user via UI chat interface.
     """
+    chat_id = message.get('chatId')
+    socketio.emit(f"response-{chat_id}", message)
+
     kafka_output_manager.send_message('nlp.input', message)
 
 

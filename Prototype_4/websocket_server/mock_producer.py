@@ -6,13 +6,13 @@ if __name__ == "__main__":
     kafka_manager = KafkaManager()
     message = {
         "@context": "https://www.w3.org/ns/activitystreams",
-        "@type": "Note",
-        "actor": "user",
+        "@type": "Object",
+        "actor": "agent",
         "content": {
             "type": "text",
-            "value": "I want to book a hotel in spain",
+            "value": "Blah blah blah",
         },
-        "chatid": "kqrfo5y4xjh6ucd2vyalyk",
+        "chatId": "3xgprmypgweag8c01ub7cs",
     }
     message = json.dumps(message)
     kafka_manager.producer.produce("google-search.output",  message)
