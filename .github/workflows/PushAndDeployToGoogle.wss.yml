@@ -37,5 +37,5 @@ jobs:
         env:
           GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT_WSS }}
         run: |
-          gcloud container clusters get-credentials websocket-server --region europe-west1
+          gcloud container clusters get-credentials websocket-server --region europe-west4
           kubectl apply -f ./Prototype_4/websocket_server/resources.yml
