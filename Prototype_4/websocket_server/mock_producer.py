@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 "value": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2972&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             },
         ],
-        "chatId": "zrkolrtyzgl4wuag6erlh",
+        "chatId": "4gvn3ydo0q67nsu1lawpb3",
     }
     message = json.dumps(message)
     kafka_manager.producer.produce("google-search.output", message)
