@@ -32,11 +32,15 @@ class ClassifierAgent:
         self.classify_and_process(processed_message)
 
     def classify_and_process(self, message):
-        chat_id = message["chatId"]
-        message_content = message["content"]["value"]
+        chat_id = message.get("chatId")
+        message_content = message.get("content").get("value")
+        topics = requests.get("http://34.91.141.27/get/topics").json()["message"]
+        topics = json.loads(topics)
 
-        output = self.classifier(message_content, ["language", "travel", "festival", "hotel", "search"],
-                                 multi_label=False)
+        if len(topics) == 0:
+            return print("No topics available.")
+
+        output = self.classifier(message_content, topics, multi_label=False)
         intent = output["labels"][0]
 
         try:
@@ -69,7 +73,7 @@ class ClassifierAgent:
         self.kafka_manager.send_message(f"{response[0]}.input", json_message_str)
 
     def process_intent(self, user_input, intent):
-        bots_info = json.loads(requests.get(f"http://localhost:8000/{intent}").json()["message"])
+        bots_info = json.loads(requests.get(f"http://34.91.141.27/{intent}").json()["message"])
         llm_response = self.generate_response_with_langchain(user_input, bots_info)
 
         if "1." in llm_response:
