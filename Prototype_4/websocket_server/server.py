@@ -113,4 +113,4 @@ if __name__ == "__main__":
     kafka_container_manager.subscribe("DiD_containers", send_container_data)
     kafka_container_manager.start_consuming()
 
-    socketio.run(app, port=5001, debug=True, allow_unsafe_werkzeug=True, use_reloader=False, log_output=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True, use_reloader=False, log_output=True)
