@@ -1,0 +1,41 @@
+name: Deploy Websocket Server to Google Kubernetes Engine
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Prototype_4/websocket_server/**
+      - .github/workflows/PushAndDeployToGoogle.wss.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google Cloud
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_WSS }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          install_components: 'gke-gcloud-auth-plugin'
+
+      - name: Build and Push Docker Image
+        env:
+          GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT_WSS }}
+        run: |
+          gcloud auth configure-docker europe-west4-docker.pkg.dev
+          docker build -t europe-west4-docker.pkg.dev/$GOOGLE_PROJECT/websocket-server/python:latest -f ./Prototype_4/websocket_server/Dockerfile ./Prototype_4/websocket_server
+          docker push europe-west4-docker.pkg.dev/$GOOGLE_PROJECT/websocket-server/python:latest
+
+      - name: Deploy to GKE
+        env:
+          GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT_WSS }}
+        run: |
+          gcloud container clusters get-credentials websocket-server --region europe-west1
+          kubectl apply -f ./Prototype_4/websocket_server/resources.yml

@@ -96,7 +96,8 @@ def retrieve_data_kafka(message):
 
 
 def send_container_data(message):
-    socketio.emit('response_command', message.value().decode('utf-8'))
+    print("normal:" + message)
+    socketio.emit('response_command', message)
 
 
 @socketio.on('getResponse')
@@ -112,4 +113,4 @@ if __name__ == "__main__":
     kafka_container_manager.subscribe("DiD_containers", send_container_data)
     kafka_container_manager.start_consuming()
 
-    socketio.run(app, port=5001, debug=True, allow_unsafe_werkzeug=True, use_reloader=False, log_output=True)
+    socketio.run(app, port=8080, debug=True, allow_unsafe_werkzeug=True, use_reloader=False, log_output=True)
