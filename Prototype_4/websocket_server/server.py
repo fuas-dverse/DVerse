@@ -48,7 +48,7 @@ def handle_output(message):
     print(message)
     print(chat_id)
     print(f"sending to message: response-{chat_id}")
-    response = requests.post(ROOT_URL + '/emit', json=message_dict)
+    response = requests.post("http://34.147.2.18:5000/emit", json=message_dict)
 
 
 @socketio.on('message')
