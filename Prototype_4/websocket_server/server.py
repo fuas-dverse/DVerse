@@ -116,6 +116,7 @@ def retrieve_container_data():
     kafka_container_manager.start_consuming()
 
 
+
 if __name__ == "__main__":
     kafka_output_manager.subscribe(r"^.*\.output$", handle_output)
     kafka_output_manager.start_consuming()
